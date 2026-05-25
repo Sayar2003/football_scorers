@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { LEAGUES } from '../services/footballAPI';
 
 const api = axios.create({
@@ -14,6 +15,7 @@ export default function Matches() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -82,7 +84,8 @@ export default function Matches() {
       )}
 
       {!loading && !error && matches.map(match => (
-        <div key={match.id} style={{
+        <div key={match.id} onClick={() => navigate(`/match/${match.id}`)} style={{
+          cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',

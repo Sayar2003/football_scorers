@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import Standings from './pages/Standings';
 import Matches from './pages/Matches';
+import MatchDetail from './pages/MatchDetail';
 
 function Navbar() {
   const location = useLocation();
@@ -36,6 +37,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Standings />} />
         <Route path="/matches" element={<Matches />} />
+        <Route path="/match/:id" element={<MatchDetail />} />
       </Routes>
     </Router>
   );
