@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getStandings, LEAGUES } from '../services/footballAPI';
+import { useNavigate } from 'react-router-dom';
 
 export default function Standings() {
   const [selectedLeague, setSelectedLeague] = useState('PL');
   const [standings, setStandings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -70,9 +72,14 @@ export default function Standings() {
               <tr key={row.team.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                 <td style={td}>{row.position}</td>
                 <td style={td}>
-                  <img src={row.team.crest} alt="" width={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                  {row.team.name}
-                </td>
+  <span
+    onClick={() => navigate(`/team/${row.team.id}`)}
+    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+  >
+    <img src={row.team.crest} alt="" width={20} />
+    {row.team.name}
+  </span>
+</td>
                 <td style={td}>{row.playedGames}</td>
                 <td style={td}>{row.won}</td>
                 <td style={td}>{row.draw}</td>
