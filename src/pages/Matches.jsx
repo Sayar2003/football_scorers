@@ -10,6 +10,17 @@ const api = axios.create({
   }
 });
 
+const dark = {
+  bg: '#0f1117',
+  card: '#1a1d27',
+  cardHover: '#1e2130',
+  border: '#2d3148',
+  text: '#ffffff',
+  muted: '#9ca3af',
+  blue: '#3b82f6',
+  green: '#16a34a',
+};
+
 export default function Matches() {
   const [selectedLeague, setSelectedLeague] = useState('PL');
   const [matches, setMatches] = useState([]);
@@ -35,22 +46,17 @@ export default function Matches() {
   };
 
   useEffect(() => {
-    // Initial fetch
     fetchMatches(selectedLeague, true);
-
-    // Auto refresh every 30 seconds
     intervalRef.current = setInterval(() => {
       fetchMatches(selectedLeague, false);
     }, 30000);
-
-    // Cleanup on unmount or league change
     return () => clearInterval(intervalRef.current);
   }, [selectedLeague]);
 
   const getStatusStyle = (status) => {
-    if (status === 'IN_PLAY') return { color: 'white', backgroundColor: '#16a34a', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' };
-    if (status === 'FINISHED') return { color: '#6b7280', fontSize: '12px' };
-    return { color: '#2563eb', fontSize: '12px' };
+    if (status === 'IN_PLAY') return { color: 'white', backgroundColor: dark.green, padding: '2px 8px', borderRadius: '4px', fontSize: '12px' };
+    if (status === 'FINISHED') return { color: dark.muted, fontSize: '12px' };
+    return { color: dark.blue, fontSize: '12px' };
   };
 
   const getStatusLabel = (status) => {
@@ -66,7 +72,6 @@ export default function Matches() {
       ' ' + date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Group matches by date
   const groupedMatches = matches.reduce((acc, match) => {
     const date = new Date(match.utcDate).toLocaleDateString('en-GB', {
       weekday: 'long', day: 'numeric', month: 'long'
@@ -77,21 +82,26 @@ export default function Matches() {
   }, {});
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '900px', margin: '0 auto' }}>
-      
-      {/* Header with live indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-        <h1>⚽ Matches</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#6b7280' }}>
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: dark.text }}>⚽ Matches</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: dark.muted }}>
           <span style={{
             width: '8px', height: '8px', borderRadius: '50%',
-            backgroundColor: '#16a34a', display: 'inline-block',
+            backgroundColor: dark.green, display: 'inline-block',
             animation: 'pulse 2s infinite'
           }} />
           {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Loading...'}
           <button
             onClick={() => fetchMatches(selectedLeague, true)}
-            style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #ccc', cursor: 'pointer', fontSize: '12px', backgroundColor: 'white' }}
+            style={{
+              padding: '4px 10px', borderRadius: '6px',
+              border: `1px solid ${dark.border}`, cursor: 'pointer',
+              fontSize: '12px', backgroundColor: dark.card,
+              color: dark.muted
+            }}
           >
             🔄 Refresh
           </button>
@@ -108,11 +118,12 @@ export default function Matches() {
               padding: '0.5rem 1rem',
               cursor: 'pointer',
               borderRadius: '8px',
-              border: '2px solid',
-              borderColor: selectedLeague === code ? '#2563eb' : '#ccc',
-              backgroundColor: selectedLeague === code ? '#2563eb' : 'white',
-              color: selectedLeague === code ? 'white' : 'black',
-              fontWeight: selectedLeague === code ? 'bold' : 'normal'
+              border: '1px solid',
+              borderColor: selectedLeague === code ? dark.blue : dark.border,
+              backgroundColor: selectedLeague === code ? dark.blue : dark.card,
+              color: selectedLeague === code ? 'white' : dark.muted,
+              fontWeight: selectedLeague === code ? '600' : 'normal',
+              fontSize: '13px'
             }}
           >
             {league.flag} {league.name}
@@ -120,11 +131,11 @@ export default function Matches() {
         ))}
       </div>
 
-      {loading && <p>Loading matches...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {loading && <p style={{ color: dark.muted }}>Loading matches...</p>}
+      {error && <p style={{ color: '#ef4444' }}>{error}</p>}
 
       {!loading && !error && matches.length === 0 && (
-        <p>No matches found.</p>
+        <p style={{ color: dark.muted }}>No matches found.</p>
       )}
 
       {/* Matches grouped by date */}
@@ -132,10 +143,10 @@ export default function Matches() {
         <div key={date} style={{ marginBottom: '1.5rem' }}>
           {/* Date header */}
           <h3 style={{
-            fontSize: '13px', fontWeight: '700', color: '#6b7280',
+            fontSize: '12px', fontWeight: '700', color: dark.muted,
             textTransform: 'uppercase', letterSpacing: '1px',
             marginBottom: '0.75rem', paddingBottom: '0.5rem',
-            borderBottom: '2px solid #e5e7eb'
+            borderBottom: `1px solid ${dark.border}`
           }}>
             {date}
           </h3>
@@ -150,30 +161,31 @@ export default function Matches() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '1rem 1.5rem',
-                marginBottom: '0.75rem',
+                marginBottom: '0.5rem',
                 borderRadius: '12px',
-                border: match.status === 'IN_PLAY' ? '1px solid #16a34a' : '1px solid #e5e7eb',
-                backgroundColor: match.status === 'IN_PLAY' ? '#f0fdf4' : 'white',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                transition: 'box-shadow 0.2s'
+                border: match.status === 'IN_PLAY' ? `1px solid ${dark.green}` : `1px solid ${dark.border}`,
+                backgroundColor: match.status === 'IN_PLAY' ? '#0f2d1a' : dark.card,
+                transition: 'background 0.2s'
               }}
             >
               {/* Home team */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '35%' }}>
                 <img src={match.homeTeam.crest} alt="" width={28} />
-                <span style={{ fontWeight: '500' }}>{match.homeTeam.shortName || match.homeTeam.name}</span>
+                <span style={{ fontWeight: '500', color: dark.text, fontSize: '14px' }}>
+                  {match.homeTeam.shortName || match.homeTeam.name}
+                </span>
               </div>
 
               {/* Score / Time */}
               <div style={{ textAlign: 'center', width: '30%' }}>
                 {match.status === 'SCHEDULED' ? (
                   <div>
-                    <div style={{ fontSize: '13px', color: '#6b7280' }}>{formatDate(match.utcDate)}</div>
+                    <div style={{ fontSize: '13px', color: dark.muted }}>{formatDate(match.utcDate)}</div>
                     <div style={getStatusStyle(match.status)}>{getStatusLabel(match.status)}</div>
                   </div>
                 ) : (
                   <div>
-                    <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
+                    <div style={{ fontSize: '22px', fontWeight: 'bold', color: dark.text }}>
                       {match.score.fullTime.home ?? '-'} : {match.score.fullTime.away ?? '-'}
                     </div>
                     <div style={getStatusStyle(match.status)}>{getStatusLabel(match.status)}</div>
@@ -183,7 +195,9 @@ export default function Matches() {
 
               {/* Away team */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '35%', justifyContent: 'flex-end' }}>
-                <span style={{ fontWeight: '500' }}>{match.awayTeam.shortName || match.awayTeam.name}</span>
+                <span style={{ fontWeight: '500', color: dark.text, fontSize: '14px' }}>
+                  {match.awayTeam.shortName || match.awayTeam.name}
+                </span>
                 <img src={match.awayTeam.crest} alt="" width={28} />
               </div>
             </div>
