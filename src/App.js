@@ -4,6 +4,8 @@ import Matches from './pages/Matches';
 import MatchDetail from './pages/MatchDetail';
 import TopScorers from './pages/TopScorers';
 import TeamDetails from './pages/TeamDetails';
+import Search from './pages/Search';
+import Fixtures from './pages/Fixtures';
 import './index.css';
 
 function Navbar() {
@@ -38,6 +40,8 @@ function Navbar() {
       <Link to="/" style={linkStyle('/')}>Standings</Link>
       <Link to="/matches" style={linkStyle('/matches')}>Matches</Link>
       <Link to="/scorers" style={linkStyle('/scorers')}>Top Scorers</Link>
+      <Link to="/search" style={linkStyle('/search')}>🔍 Search</Link>
+      <Link to="/fixtures" style={linkStyle('/fixtures')}>📅 Fixtures</Link>
     </nav>
   );
 }
@@ -52,6 +56,8 @@ function App() {
         <Route path="/match/:id" element={<MatchDetail />} />
         <Route path="/scorers" element={<TopScorers />} />
         <Route path="/team/:id" element={<TeamDetails />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/fixtures" element={<Fixtures />} />
       </Routes>
     </Router>
   );
