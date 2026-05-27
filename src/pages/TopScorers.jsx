@@ -4,10 +4,13 @@ import { LEAGUES } from '../services/footballAPI';
 
 const api = axios.create({
   baseURL: '/v4',
-  headers: {
-    'X-Auth-Token': process.env.REACT_APP_FOOTBALL_API_KEY
-  }
+  headers: { 'X-Auth-Token': process.env.REACT_APP_FOOTBALL_API_KEY }
 });
+
+const dark = {
+  card: '#1a1d27', border: '#2d3148',
+  text: '#ffffff', muted: '#9ca3af', blue: '#3b82f6',
+};
 
 export default function TopScorers() {
   const [selectedLeague, setSelectedLeague] = useState('PL');
@@ -19,91 +22,70 @@ export default function TopScorers() {
     setLoading(true);
     setError(null);
     api.get(`/competitions/${selectedLeague}/scorers?limit=20`)
-      .then(res => {
-        setScorers(res.data.scorers);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Failed to load top scorers.');
-        setLoading(false);
-      });
+      .then(res => { setScorers(res.data.scorers); setLoading(false); })
+      .catch(() => { setError('Failed to load top scorers.'); setLoading(false); });
   }, [selectedLeague]);
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '900px', margin: '0 auto' }}>
-      <h1>🥇 Top Scorers</h1>
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: '700', color: dark.text, marginBottom: '1.5rem' }}>🥇 Top Scorers</h1>
 
-      {/* League selector */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         {Object.entries(LEAGUES).map(([code, league]) => (
-          <button
-            key={code}
-            onClick={() => setSelectedLeague(code)}
-            style={{
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              borderRadius: '8px',
-              border: '2px solid',
-              borderColor: selectedLeague === code ? '#2563eb' : '#ccc',
-              backgroundColor: selectedLeague === code ? '#2563eb' : 'white',
-              color: selectedLeague === code ? 'white' : 'black',
-              fontWeight: selectedLeague === code ? 'bold' : 'normal'
-            }}
-          >
+          <button key={code} onClick={() => setSelectedLeague(code)} style={{
+            padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '8px', border: '1px solid',
+            borderColor: selectedLeague === code ? dark.blue : dark.border,
+            backgroundColor: selectedLeague === code ? dark.blue : dark.card,
+            color: selectedLeague === code ? 'white' : dark.muted,
+            fontWeight: selectedLeague === code ? '600' : 'normal', fontSize: '13px'
+          }}>
             {league.flag} {league.name}
           </button>
         ))}
       </div>
 
-      {loading && <p>Loading top scorers...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {loading && <p style={{ color: dark.muted }}>Loading top scorers...</p>}
+      {error && <p style={{ color: '#ef4444' }}>{error}</p>}
 
       {!loading && !error && (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f3f4f6', textAlign: 'left' }}>
-              <th style={th}>#</th>
-              <th style={th}>Player</th>
-              <th style={th}>Team</th>
-              <th style={th}>Goals</th>
-              <th style={th}>Assists</th>
-              <th style={th}>Penalties</th>
-              <th style={th}>Matches</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scorers.map((item, index) => (
-              <tr key={item.player.id} style={{
-                borderBottom: '1px solid #e5e7eb',
-                backgroundColor: index === 0 ? '#fffbeb' : index === 1 ? '#f9fafb' : index === 2 ? '#fdf2f8' : 'white'
-              }}>
-                <td style={td}>
-                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
-                </td>
-                <td style={td}>
-                  <div style={{ fontWeight: '600' }}>{item.player.name}</div>
-                  <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.player.nationality}</div>
-                </td>
-                <td style={td}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <img src={item.team.crest} alt="" width={20} />
-                    {item.team.shortName || item.team.name}
-                  </div>
-                </td>
-                <td style={{ ...td, fontWeight: 'bold', fontSize: '16px', color: '#2563eb' }}>
-                  {item.goals}
-                </td>
-                <td style={td}>{item.assists ?? 0}</td>
-                <td style={td}>{item.penalties ?? 0}</td>
-                <td style={td}>{item.playedMatches}</td>
+        <div style={{ borderRadius: '12px', border: `1px solid ${dark.border}`, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#13161f' }}>
+                {['#', 'Player', 'Team', 'Goals', 'Assists', 'Pens', 'Matches'].map(h => (
+                  <th key={h} style={{ padding: '10px 12px', fontSize: '12px', fontWeight: '600', color: dark.muted, textAlign: h === 'Player' || h === 'Team' ? 'left' : 'center' }}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {scorers.map((item, index) => (
+                <tr key={item.player.id} style={{
+                  borderTop: `1px solid ${dark.border}`,
+                  backgroundColor: index === 0 ? '#2d2600' : index === 1 ? '#1e2130' : index === 2 ? '#2d1a2d' : dark.card
+                }}>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', fontSize: '16px' }}>
+                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : <span style={{ color: dark.muted }}>{index + 1}</span>}
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ fontWeight: '600', color: dark.text }}>{item.player.name}</div>
+                    <div style={{ fontSize: '12px', color: dark.muted }}>{item.player.nationality}</div>
+                  </td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <img src={item.team.crest} alt="" width={20} />
+                      <span style={{ color: dark.muted, fontSize: '13px' }}>{item.team.shortName || item.team.name}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 'bold', fontSize: '16px', color: dark.blue }}>{item.goals}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', color: dark.muted }}>{item.assists ?? 0}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', color: dark.muted }}>{item.penalties ?? 0}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', color: dark.muted }}>{item.playedMatches}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
 }
-
-const th = { padding: '10px 12px', fontSize: '14px' };
-const td = { padding: '10px 12px', fontSize: '14px' };

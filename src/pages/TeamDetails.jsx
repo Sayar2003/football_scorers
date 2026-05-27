@@ -4,10 +4,13 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/v4',
-  headers: {
-    'X-Auth-Token': process.env.REACT_APP_FOOTBALL_API_KEY
-  }
+  headers: { 'X-Auth-Token': process.env.REACT_APP_FOOTBALL_API_KEY }
 });
+
+const dark = {
+  card: '#1a1d27', border: '#2d3148',
+  text: '#ffffff', muted: '#9ca3af', blue: '#3b82f6',
+};
 
 export default function TeamDetail() {
   const { id } = useParams();
@@ -35,22 +38,17 @@ export default function TeamDetail() {
       });
   }, [id]);
 
-  if (loading) return <p style={{ padding: '2rem' }}>Loading team details...</p>;
-  if (error) return <p style={{ padding: '2rem', color: 'red' }}>{error}</p>;
+  if (loading) return <p style={{ padding: '2rem', color: '#9ca3af' }}>Loading team details...</p>;
+  if (error) return <p style={{ padding: '2rem', color: '#ef4444' }}>{error}</p>;
   if (!team) return null;
 
   const tabStyle = (tab) => ({
-    padding: '0.6rem 1.5rem',
-    cursor: 'pointer',
-    borderRadius: '8px',
-    border: 'none',
-    fontWeight: '600',
-    fontSize: '14px',
-    backgroundColor: activeTab === tab ? '#2563eb' : '#f3f4f6',
-    color: activeTab === tab ? 'white' : '#374151',
+    padding: '0.6rem 1.5rem', cursor: 'pointer',
+    borderRadius: '8px', border: 'none', fontWeight: '600', fontSize: '14px',
+    backgroundColor: activeTab === tab ? dark.blue : '#1e2130',
+    color: activeTab === tab ? 'white' : dark.muted,
   });
 
-  // Group squad by position
   const grouped = team.squad.reduce((acc, player) => {
     const pos = player.position || 'Unknown';
     if (!acc[pos]) acc[pos] = [];
@@ -61,29 +59,27 @@ export default function TeamDetail() {
   const positionOrder = ['Goalkeeper', 'Defence', 'Midfield', 'Offence', 'Unknown'];
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
 
-      {/* Back button */}
-      <button
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: '1.5rem', padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white' }}
-      >
-        ← Back
-      </button>
+      <button onClick={() => navigate(-1)} style={{
+        marginBottom: '1.5rem', padding: '0.5rem 1rem', cursor: 'pointer',
+        borderRadius: '8px', border: `1px solid ${dark.border}`,
+        backgroundColor: dark.card, color: dark.text
+      }}>← Back</button>
 
       {/* Team header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '1.5rem',
         padding: '1.5rem', borderRadius: '16px',
-        border: '1px solid #e5e7eb', marginBottom: '1.5rem',
-        backgroundColor: '#f9fafb'
+        border: `1px solid ${dark.border}`,
+        marginBottom: '1.5rem', backgroundColor: dark.card
       }}>
         <img src={team.crest} alt={team.name} width={80} />
         <div>
-          <h1 style={{ fontSize: '28px', marginBottom: '0.3rem' }}>{team.name}</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>📍 {team.venue}</p>
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>🏠 Founded: {team.founded}</p>
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>🌐 {team.area?.name}</p>
+          <h1 style={{ fontSize: '28px', marginBottom: '0.3rem', color: dark.text }}>{team.name}</h1>
+          <p style={{ color: dark.muted, fontSize: '14px' }}>📍 {team.venue}</p>
+          <p style={{ color: dark.muted, fontSize: '14px' }}>🏠 Founded: {team.founded}</p>
+          <p style={{ color: dark.muted, fontSize: '14px' }}>🌐 {team.area?.name}</p>
         </div>
       </div>
 
@@ -100,10 +96,10 @@ export default function TeamDetail() {
             grouped[position] ? (
               <div key={position} style={{ marginBottom: '1.5rem' }}>
                 <h3 style={{
-                  fontSize: '13px', fontWeight: '700', color: '#6b7280',
+                  fontSize: '12px', fontWeight: '700', color: dark.muted,
                   textTransform: 'uppercase', letterSpacing: '1px',
                   marginBottom: '0.5rem', paddingBottom: '0.5rem',
-                  borderBottom: '1px solid #e5e7eb'
+                  borderBottom: `1px solid ${dark.border}`
                 }}>
                   {position}
                 </h3>
@@ -112,21 +108,21 @@ export default function TeamDetail() {
                     display: 'flex', alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '0.6rem 0.5rem',
-                    borderBottom: '1px solid #f3f4f6',
+                    borderBottom: `1px solid ${dark.border}`,
                     fontSize: '14px'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{
                         width: '28px', height: '28px', borderRadius: '50%',
-                        backgroundColor: '#2563eb', color: 'white',
+                        backgroundColor: dark.blue, color: 'white',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '12px', fontWeight: 'bold', flexShrink: 0
                       }}>
                         {player.shirtNumber ?? '?'}
                       </span>
-                      <span style={{ fontWeight: '500' }}>{player.name}</span>
+                      <span style={{ fontWeight: '500', color: dark.text }}>{player.name}</span>
                     </div>
-                    <div style={{ display: 'flex', gap: '1rem', color: '#6b7280', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', gap: '1rem', color: dark.muted, fontSize: '13px' }}>
                       <span>🌍 {player.nationality}</span>
                       <span>🎂 {player.dateOfBirth ? new Date().getFullYear() - new Date(player.dateOfBirth).getFullYear() + ' yrs' : 'N/A'}</span>
                     </div>
@@ -141,8 +137,8 @@ export default function TeamDetail() {
       {/* Recent form tab */}
       {activeTab === 'form' && (
         <div>
-          <h3 style={{ marginBottom: '1rem', fontSize: '16px' }}>Last 5 Matches</h3>
-          {matches.length === 0 && <p style={{ color: '#6b7280' }}>No recent matches found.</p>}
+          <h3 style={{ marginBottom: '1rem', fontSize: '16px', color: dark.text }}>Last 5 Matches</h3>
+          {matches.length === 0 && <p style={{ color: dark.muted }}>No recent matches found.</p>}
           {matches.map(match => {
             const isHome = match.homeTeam.id === parseInt(id);
             const opponent = isHome ? match.awayTeam : match.homeTeam;
@@ -156,24 +152,22 @@ export default function TeamDetail() {
                 display: 'flex', alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '0.75rem 1rem', marginBottom: '0.5rem',
-                borderRadius: '10px', border: '1px solid #e5e7eb',
-                backgroundColor: 'white', fontSize: '14px'
+                borderRadius: '10px', border: `1px solid ${dark.border}`,
+                backgroundColor: dark.card, fontSize: '14px'
               }}>
                 <span style={{
                   width: '28px', height: '28px', borderRadius: '6px',
                   backgroundColor: resultColor, color: 'white',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontWeight: 'bold', fontSize: '13px', flexShrink: 0
-                }}>
-                  {result}
-                </span>
-                <div style={{ flex: 1, marginLeft: '1rem' }}>
+                }}>{result}</span>
+                <div style={{ flex: 1, marginLeft: '1rem', color: dark.text }}>
                   <span>{isHome ? 'vs' : '@'} </span>
                   <img src={opponent.crest} alt="" width={18} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
                   <span style={{ fontWeight: '500' }}>{opponent.shortName || opponent.name}</span>
                 </div>
-                <span style={{ fontWeight: 'bold' }}>{myScore} - {oppScore}</span>
-                <span style={{ color: '#6b7280', fontSize: '12px', marginLeft: '1rem' }}>
+                <span style={{ fontWeight: 'bold', color: dark.text }}>{myScore} - {oppScore}</span>
+                <span style={{ color: dark.muted, fontSize: '12px', marginLeft: '1rem' }}>
                   {new Date(match.utcDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                 </span>
               </div>
