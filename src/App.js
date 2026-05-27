@@ -7,6 +7,7 @@ import TeamDetail from './pages/TeamDetails';
 import Search from './pages/Search';
 import Fixtures from './pages/Fixtures';
 import PlayerProfile from './pages/PlayerProfile';
+import Chatbot from './pages/Chatbot';
 import './index.css';
 
 function Navbar() {
@@ -49,6 +50,7 @@ function Navbar() {
       <Link to="/fixtures" style={linkStyle('/fixtures')}>Fixtures</Link>
       <Link to="/scorers" style={linkStyle('/scorers')}>Top Scorers</Link>
       <Link to="/search" style={linkStyle('/search')}>🔍 Search</Link>
+      <Link to="/chat" style={linkStyle('/chat')}>🤖 AI Chat</Link>
     </nav>
   );
 }
@@ -66,6 +68,7 @@ function App() {
         <Route path="/team/:id" element={<TeamDetail />} />
         <Route path="/search" element={<Search />} />
         <Route path="/player/:id" element={<PlayerProfile />} />
+        <Route path="/chat" element={<Chatbot />} />
       </Routes>
     </Router>
   );
