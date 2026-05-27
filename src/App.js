@@ -6,6 +6,7 @@ import TopScorers from './pages/TopScorers';
 import TeamDetail from './pages/TeamDetails';
 import Search from './pages/Search';
 import Fixtures from './pages/Fixtures';
+import PlayerProfile from './pages/PlayerProfile';
 import './index.css';
 
 function Navbar() {
@@ -64,6 +65,7 @@ function App() {
         <Route path="/scorers" element={<TopScorers />} />
         <Route path="/team/:id" element={<TeamDetail />} />
         <Route path="/search" element={<Search />} />
+        <Route path="/player/:id" element={<PlayerProfile />} />
       </Routes>
     </Router>
   );

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { LEAGUES } from '../services/footballAPI';
 
 const api = axios.create({
@@ -12,18 +13,33 @@ const dark = {
   text: '#ffffff', muted: '#9ca3af', blue: '#3b82f6',
 };
 
+const cache = {};
+
 export default function TopScorers() {
   const [selectedLeague, setSelectedLeague] = useState('PL');
   const [scorers, setScorers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
+useEffect(() => {
+    if (cache[selectedLeague]) {
+      setScorers(cache[selectedLeague]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     api.get(`/competitions/${selectedLeague}/scorers?limit=20`)
-      .then(res => { setScorers(res.data.scorers); setLoading(false); })
-      .catch(() => { setError('Failed to load top scorers.'); setLoading(false); });
+      .then(res => {
+        cache[selectedLeague] = res.data.scorers;
+        setScorers(res.data.scorers);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load top scorers. Please wait a minute and try again.');
+        setLoading(false);
+      });
   }, [selectedLeague]);
 
   return (
@@ -67,7 +83,12 @@ export default function TopScorers() {
                     {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : <span style={{ color: dark.muted }}>{index + 1}</span>}
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <div style={{ fontWeight: '600', color: dark.text }}>{item.player.name}</div>
+                    <div
+  onClick={() => navigate(`/player/${item.player.id}`)}
+  style={{ fontWeight: '600', color: dark.text, cursor: 'pointer' }}
+>
+  {item.player.name}
+</div>
                     <div style={{ fontSize: '12px', color: dark.muted }}>{item.player.nationality}</div>
                   </td>
                   <td style={{ padding: '10px 12px' }}>

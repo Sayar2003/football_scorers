@@ -120,7 +120,12 @@ export default function TeamDetail() {
                       }}>
                         {player.shirtNumber ?? '?'}
                       </span>
-                      <span style={{ fontWeight: '500', color: dark.text }}>{player.name}</span>
+                      <span
+  style={{ fontWeight: '500', color: dark.text, cursor: 'pointer' }}
+  onClick={() => navigate(`/player/${player.id}`)}
+>
+  {player.name}
+</span>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', color: dark.muted, fontSize: '13px' }}>
                       <span>🌍 {player.nationality}</span>

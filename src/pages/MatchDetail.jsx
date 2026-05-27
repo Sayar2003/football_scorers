@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import RatingBadge from '../components/RatingBadge';
+import { calculatePlayerRating, getRatingColor } from '../utils/ratingCalculator';
 
 const api = axios.create({
   baseURL: '/v4',
@@ -45,6 +47,10 @@ export default function MatchDetail() {
   const home = match.homeTeam;
   const away = match.awayTeam;
   const score = match.score.fullTime;
+  const isFinished = match.status === 'FINISHED';
+  const homeWon = isFinished && score.home > score.away;
+  const awayWon = isFinished && score.away > score.home;
+  const isDraw = isFinished && score.home === score.away;
 
   const tabStyle = (tab) => ({
     padding: '0.6rem 1.5rem', cursor: 'pointer',
@@ -66,10 +72,30 @@ export default function MatchDetail() {
     m.score.fullTime.home === m.score.fullTime.away
   ).length;
 
+  // Calculate ratings for lineup players
+  const getPlayerRating = (player, isHomeTeam) => {
+    const isWin = isHomeTeam ? homeWon : awayWon;
+    const isLoss = isHomeTeam ? awayWon : homeWon;
+    const isGoalkeeper = player.position === 'Goalkeeper';
+    return calculatePlayerRating(
+      player.player,
+      match.goals,
+      isWin,
+      isDraw,
+      isLoss,
+      isGoalkeeper
+    );
+  };
+
+  // Fake possession based on goals (visual only)
+  const homePossession = isFinished
+    ? Math.min(70, Math.max(30, 50 + (score.home - score.away) * 5))
+    : 50;
+  const awayPossession = 100 - homePossession;
+
   return (
     <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
 
-      {/* Back button */}
       <button onClick={() => navigate(-1)} style={{
         marginBottom: '1.5rem', padding: '0.5rem 1rem', cursor: 'pointer',
         borderRadius: '8px', border: `1px solid ${dark.border}`,
@@ -89,16 +115,14 @@ export default function MatchDetail() {
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem' }}>
-          {/* Home team */}
-          <div
-            style={{ textAlign: 'center', flex: 1, cursor: 'pointer' }}
-            onClick={() => navigate(`/team/${home.id}`)}
-          >
+          <div style={{ textAlign: 'center', flex: 1, cursor: 'pointer' }} onClick={() => navigate(`/team/${home.id}`)}>
             <img src={home.crest} alt={home.name} width={60} style={{ marginBottom: '0.5rem' }} />
-            <div style={{ fontWeight: 'bold', fontSize: '18px', color: dark.text }}>{home.shortName || home.name}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '18px', color: homeWon ? '#60a5fa' : dark.text }}>
+              {home.shortName || home.name}
+            </div>
+            {homeWon && <div style={{ fontSize: '11px', color: '#60a5fa', marginTop: '2px' }}>WINNER</div>}
           </div>
 
-          {/* Score */}
           <div style={{ textAlign: 'center' }}>
             {match.status === 'SCHEDULED' ? (
               <div style={{ fontSize: '24px', color: dark.muted }}>vs</div>
@@ -107,36 +131,73 @@ export default function MatchDetail() {
                 {score.home ?? '-'} : {score.away ?? '-'}
               </div>
             )}
-            <div style={{
-              fontSize: '13px', marginTop: '4px',
-              color: match.status === 'IN_PLAY' ? '#16a34a' : dark.muted
-            }}>
+            <div style={{ fontSize: '13px', marginTop: '4px', color: match.status === 'IN_PLAY' ? '#16a34a' : dark.muted }}>
               {match.status === 'IN_PLAY' ? '🔴 LIVE' : match.status === 'FINISHED' ? 'Full Time' : 'Upcoming'}
             </div>
           </div>
 
-          {/* Away team */}
-          <div
-            style={{ textAlign: 'center', flex: 1, cursor: 'pointer' }}
-            onClick={() => navigate(`/team/${away.id}`)}
-          >
+          <div style={{ textAlign: 'center', flex: 1, cursor: 'pointer' }} onClick={() => navigate(`/team/${away.id}`)}>
             <img src={away.crest} alt={away.name} width={60} style={{ marginBottom: '0.5rem' }} />
-            <div style={{ fontWeight: 'bold', fontSize: '18px', color: dark.text }}>{away.shortName || away.name}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '18px', color: awayWon ? '#60a5fa' : dark.text }}>
+              {away.shortName || away.name}
+            </div>
+            {awayWon && <div style={{ fontSize: '11px', color: '#60a5fa', marginTop: '2px' }}>WINNER</div>}
           </div>
         </div>
+
+        {/* Possession bar */}
+        {isFinished && (
+          <div style={{ marginTop: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: dark.muted, marginBottom: '4px' }}>
+              <span>{homePossession}%</span>
+              <span>Possession</span>
+              <span>{awayPossession}%</span>
+            </div>
+            <div style={{ height: '6px', borderRadius: '3px', overflow: 'hidden', display: 'flex' }}>
+              <div style={{ width: `${homePossession}%`, backgroundColor: '#3b82f6' }} />
+              <div style={{ width: `${awayPossession}%`, backgroundColor: '#ef4444' }} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <button style={tabStyle('overview')} onClick={() => setActiveTab('overview')}>📋 Overview</button>
+        <button style={tabStyle('ratings')} onClick={() => setActiveTab('ratings')}>⭐ Ratings</button>
         <button style={tabStyle('h2h')} onClick={() => setActiveTab('h2h')}>⚔️ Head to Head</button>
       </div>
 
       {/* Overview tab */}
       {activeTab === 'overview' && (
         <div>
+          {/* Match stats */}
+          {isFinished && (
+            <div style={{ borderRadius: '12px', border: `1px solid ${dark.border}`, overflow: 'hidden', marginBottom: '1.5rem' }}>
+              <div style={{ padding: '0.75rem 1.5rem', backgroundColor: '#13161f', fontWeight: 'bold', fontSize: '14px', color: dark.text }}>
+                📊 Match Stats
+              </div>
+              {[
+                { label: 'Goals', home: score.home, away: score.away },
+                { label: 'Possession', home: `${homePossession}%`, away: `${awayPossession}%` },
+                { label: 'Result', home: homeWon ? 'WIN' : isDraw ? 'DRAW' : 'LOSS', away: awayWon ? 'WIN' : isDraw ? 'DRAW' : 'LOSS' },
+              ].map((stat, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center',
+                  padding: '0.75rem 1.5rem',
+                  borderTop: `1px solid ${dark.border}`,
+                }}>
+                  <div style={{ flex: 1, textAlign: 'left', fontWeight: '600', color: dark.text, fontSize: '14px' }}>{stat.home}</div>
+                  <div style={{ flex: 1, textAlign: 'center', color: dark.muted, fontSize: '13px' }}>{stat.label}</div>
+                  <div style={{ flex: 1, textAlign: 'right', fontWeight: '600', color: dark.text, fontSize: '14px' }}>{stat.away}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Goals */}
           {match.goals && match.goals.length > 0 && (
-            <div style={{ marginBottom: '1.5rem', borderRadius: '12px', border: `1px solid ${dark.border}`, overflow: 'hidden' }}>
+            <div style={{ borderRadius: '12px', border: `1px solid ${dark.border}`, overflow: 'hidden', marginBottom: '1.5rem' }}>
               <div style={{ padding: '0.75rem 1.5rem', backgroundColor: '#13161f', fontWeight: 'bold', fontSize: '14px', color: dark.text }}>
                 ⚽ Goals
               </div>
@@ -151,6 +212,7 @@ export default function MatchDetail() {
                   <span>
                     {goal.team.id === home.id ? '⚽ ' : ''}
                     <strong>{goal.scorer?.name}</strong> {goal.minute}'
+                    {goal.assist && <span style={{ color: dark.muted }}> (assist: {goal.assist.name})</span>}
                     {goal.team.id !== home.id ? ' ⚽' : ''}
                   </span>
                 </div>
@@ -158,6 +220,7 @@ export default function MatchDetail() {
             </div>
           )}
 
+          {/* Lineups */}
           {match.lineups && match.lineups.length === 2 && (
             <div style={{ borderRadius: '12px', border: `1px solid ${dark.border}`, overflow: 'hidden' }}>
               <div style={{ padding: '0.75rem 1.5rem', backgroundColor: '#13161f', fontWeight: 'bold', fontSize: '14px', color: dark.text }}>
@@ -192,6 +255,78 @@ export default function MatchDetail() {
         </div>
       )}
 
+      {/* Ratings tab */}
+      {activeTab === 'ratings' && (
+        <div>
+          {match.lineups && match.lineups.length === 2 ? (
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {/* Home ratings */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '0.75rem', color: dark.text, fontSize: '15px' }}>
+                  <img src={home.crest} alt="" width={20} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                  {home.shortName || home.name}
+                </div>
+                {match.lineups[0].startXI?.map((p, i) => {
+                  const rating = getPlayerRating(p, true);
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => navigate(`/player/${p.player.id}`)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '0.5rem 0.75rem', marginBottom: '4px',
+                        borderRadius: '8px', border: `1px solid ${dark.border}`,
+                        backgroundColor: dark.card, cursor: 'pointer'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: dark.muted, fontSize: '12px', width: '16px' }}>{p.player.shirtNumber}</span>
+                        <span style={{ color: dark.text, fontSize: '13px' }}>{p.player.name}</span>
+                      </div>
+                      <RatingBadge rating={rating} size="sm" />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Away ratings */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '0.75rem', color: dark.text, fontSize: '15px' }}>
+                  <img src={away.crest} alt="" width={20} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                  {away.shortName || away.name}
+                </div>
+                {match.lineups[1].startXI?.map((p, i) => {
+                  const rating = getPlayerRating(p, false);
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => navigate(`/player/${p.player.id}`)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '0.5rem 0.75rem', marginBottom: '4px',
+                        borderRadius: '8px', border: `1px solid ${dark.border}`,
+                        backgroundColor: dark.card, cursor: 'pointer'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: dark.muted, fontSize: '12px', width: '16px' }}>{p.player.shirtNumber}</span>
+                        <span style={{ color: dark.text, fontSize: '13px' }}>{p.player.name}</span>
+                      </div>
+                      <RatingBadge rating={rating} size="sm" />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <p style={{ color: dark.muted, marginBottom: '1rem' }}>Lineup data not available for this match.</p>
+              <p style={{ color: dark.muted, fontSize: '13px' }}>Ratings are calculated based on match result and goal contributions.</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Head to Head tab */}
       {activeTab === 'h2h' && (
         <div>
@@ -199,7 +334,6 @@ export default function MatchDetail() {
             <p style={{ color: dark.muted, textAlign: 'center', padding: '2rem' }}>No head to head data available.</p>
           ) : (
             <div>
-              {/* H2H summary */}
               <div style={{
                 display: 'flex', borderRadius: '12px',
                 border: `1px solid ${dark.border}`, overflow: 'hidden',
@@ -222,7 +356,6 @@ export default function MatchDetail() {
                 </div>
               </div>
 
-              {/* H2H match list */}
               <h3 style={{ fontSize: '12px', fontWeight: '700', color: dark.muted, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Recent Meetings
               </h3>
