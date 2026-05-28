@@ -8,6 +8,7 @@ import Search from './pages/Search';
 import Fixtures from './pages/Fixtures';
 import PlayerProfile from './pages/PlayerProfile';
 import Chatbot from './pages/Chatbot';
+import MatchPredictor from './pages/MatchPredictor';
 import './index.css';
 
 function Navbar() {
@@ -51,6 +52,7 @@ function Navbar() {
       <Link to="/scorers" style={linkStyle('/scorers')}>Top Scorers</Link>
       <Link to="/search" style={linkStyle('/search')}>🔍 Search</Link>
       <Link to="/chat" style={linkStyle('/chat')}>🤖 AI Chat</Link>
+      <Link to="/predict" style={linkStyle('/predict')}>🔮 Predictor</Link>
     </nav>
   );
 }
@@ -69,6 +71,7 @@ function App() {
         <Route path="/search" element={<Search />} />
         <Route path="/player/:id" element={<PlayerProfile />} />
         <Route path="/chat" element={<Chatbot />} />
+        <Route path="/predict" element={<MatchPredictor />} />
       </Routes>
     </Router>
   );
