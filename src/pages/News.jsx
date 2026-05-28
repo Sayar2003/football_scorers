@@ -88,7 +88,16 @@ export default function News() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    const query = category === 'all' ? 'football' : `football ${category}`;
+    const categoryQueries = {
+  'all': 'football transfer news',
+  'transfer': 'football transfer signing rumour',
+  'premier league': 'Premier League football',
+  'la liga': 'La Liga football Spain',
+  'bundesliga': 'Bundesliga football Germany',
+  'serie a': 'Serie A football Italy',
+  'ligue 1': 'Ligue 1 football France',
+};
+const query = categoryQueries[category] || `football ${category}`;
     const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=20&apiKey=${process.env.REACT_APP_NEWS_API_KEY}`;
     fetch(url)
       .then(res => res.json())
