@@ -7,58 +7,84 @@ import TeamDetail from './pages/TeamDetails';
 import Search from './pages/Search';
 import Fixtures from './pages/Fixtures';
 import PlayerProfile from './pages/PlayerProfile';
-import Chatbot from './pages/Chatbot';
 import MatchPredictor from './pages/MatchPredictor';
 import News from './pages/News';
 import YoungTalent from './pages/YoungTalent';
 import ContentCreator from './pages/ContentCreator';
+import Chatbot from './pages/Chatbot';
 import './index.css';
+
+const NAV_LINKS = [
+  { path: '/', label: '📊 Standings' },
+  { path: '/matches', label: '⚽ Matches' },
+  { path: '/fixtures', label: '📅 Fixtures' },
+  { path: '/scorers', label: '🥇 Scorers' },
+  { path: '/predict', label: '🔮 Predictor' },
+  { path: '/talent', label: '🌟 Talent' },
+  { path: '/news', label: '📰 News' },
+  { path: '/search', label: '🔍 Search' },
+  { path: '/chat', label: '🤖 AI Chat' },
+  { path: '/creator', label: '🎨 Creator' },
+];
 
 function Navbar() {
   const location = useLocation();
 
-  const linkStyle = (path) => ({
-    textDecoration: 'none',
-    padding: '0.5rem 1.2rem',
-    borderRadius: '8px',
-    fontWeight: '500',
-    fontSize: '14px',
-    backgroundColor: location.pathname === path ? '#3b82f6' : 'transparent',
-    color: location.pathname === path ? 'white' : '#9ca3af',
-    transition: 'all 0.2s'
-  });
-
   return (
     <nav style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.25rem',
-      padding: '0.75rem 2rem',
-      backgroundColor: '#1a1d27',
-      borderBottom: '1px solid #2d3148',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      flexWrap: 'wrap'
+      position: 'sticky', top: 0, zIndex: 100,
+      background: 'rgba(10, 14, 26, 0.8)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      padding: '0 2rem',
     }}>
-      <span style={{
-        fontWeight: 'bold',
-        fontSize: '1.2rem',
-        marginRight: '1.5rem',
-        color: '#ffffff'
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        gap: '0.25rem', maxWidth: '1400px',
+        margin: '0 auto', overflowX: 'auto',
+        scrollbarWidth: 'none', msOverflowStyle: 'none',
+        padding: '0.6rem 0'
       }}>
-        ⚽ FootballApp
-      </span>
-      <Link to="/" style={linkStyle('/')}>Standings</Link>
-      <Link to="/matches" style={linkStyle('/matches')}>Matches</Link>
-      <Link to="/fixtures" style={linkStyle('/fixtures')}>Fixtures</Link>
-      <Link to="/scorers" style={linkStyle('/scorers')}>Top Scorers</Link>
-      <Link to="/search" style={linkStyle('/search')}>🔍 Search</Link>
-      <Link to="/chat" style={linkStyle('/chat')}>🤖 AI Chat</Link>
-      <Link to="/predict" style={linkStyle('/predict')}>🔮 Predictor</Link>
-      <Link to="/news" style={linkStyle('/news')}>📰 News</Link>
-      <Link to="/talent" style={linkStyle('/talent')}>🌟 Talent</Link>
-      <Link to="/creator" style={linkStyle('/creator')}>🎨 Creator</Link>
+        {/* Logo */}
+        <Link to="/" style={{ textDecoration: 'none', marginRight: '1rem', flexShrink: 0 }}>
+          <span style={{
+            fontWeight: '800', fontSize: '1.2rem',
+            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            ⚽ FootballApp
+          </span>
+        </Link>
+
+        {/* Nav links */}
+        {NAV_LINKS.map(link => {
+          const isActive = location.pathname === link.path;
+          return (
+            <Link
+              key={link.path}
+              to={link.path}
+              style={{
+                textDecoration: 'none',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                fontWeight: isActive ? '600' : '400',
+                fontSize: '13px',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                backgroundColor: isActive ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.5)',
+                border: isActive ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
@@ -76,11 +102,11 @@ function App() {
         <Route path="/team/:id" element={<TeamDetail />} />
         <Route path="/search" element={<Search />} />
         <Route path="/player/:id" element={<PlayerProfile />} />
-        <Route path="/chat" element={<Chatbot />} />
         <Route path="/predict" element={<MatchPredictor />} />
         <Route path="/news" element={<News />} />
         <Route path="/talent" element={<YoungTalent />} />
         <Route path="/creator" element={<ContentCreator />} />
+        <Route path="/chat" element={<Chatbot />} />
       </Routes>
     </Router>
   );

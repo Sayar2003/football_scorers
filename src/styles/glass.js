@@ -1,0 +1,90 @@
+export const glass = {
+  card: {
+    background: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '16px',
+  },
+  cardStrong: {
+    background: 'rgba(255, 255, 255, 0.06)',
+    backdropFilter: 'blur(30px)',
+    WebkitBackdropFilter: 'blur(30px)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: '16px',
+  },
+  cardHover: {
+    background: 'rgba(255, 255, 255, 0.05)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(59, 130, 246, 0.3)',
+    borderRadius: '16px',
+  },
+  header: {
+    background: 'rgba(10, 14, 26, 0.8)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.06)',
+    borderRadius: '12px',
+  },
+  input: {
+    background: 'rgba(255, 255, 255, 0.04)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '10px',
+    color: '#ffffff',
+    outline: 'none',
+  },
+  button: {
+    primary: {
+      background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+      border: 'none',
+      borderRadius: '10px',
+      color: 'white',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+    },
+    secondary: {
+      background: 'rgba(255, 255, 255, 0.05)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '10px',
+      color: 'rgba(255,255,255,0.7)',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+    },
+    active: {
+      background: 'rgba(59, 130, 246, 0.2)',
+      border: '1px solid rgba(59, 130, 246, 0.4)',
+      borderRadius: '10px',
+      color: '#60a5fa',
+      fontWeight: '600',
+      cursor: 'pointer',
+    }
+  },
+  colors: {
+    text: '#ffffff',
+    muted: 'rgba(255,255,255,0.5)',
+    blue: '#60a5fa',
+    green: '#34d399',
+    red: '#f87171',
+    yellow: '#fbbf24',
+    purple: '#a78bfa',
+    border: 'rgba(255,255,255,0.08)',
+  }
+};
+
+export const leagueButtonStyle = (isActive) => ({
+  padding: '0.5rem 1rem',
+  cursor: 'pointer',
+  borderRadius: '10px',
+  border: '1px solid',
+  borderColor: isActive ? 'rgba(59, 130, 246, 0.4)' : 'rgba(255,255,255,0.08)',
+  background: isActive ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.03)',
+  color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.5)',
+  fontWeight: isActive ? '600' : 'normal',
+  fontSize: '13px',
+  transition: 'all 0.2s ease',
+  backdropFilter: 'blur(10px)',
+});
