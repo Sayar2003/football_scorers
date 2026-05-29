@@ -10,6 +10,7 @@ import PlayerProfile from './pages/PlayerProfile';
 import Chatbot from './pages/Chatbot';
 import MatchPredictor from './pages/MatchPredictor';
 import News from './pages/News';
+import YoungTalent from './pages/YoungTalent';
 import './index.css';
 
 function Navbar() {
@@ -55,6 +56,7 @@ function Navbar() {
       <Link to="/chat" style={linkStyle('/chat')}>🤖 AI Chat</Link>
       <Link to="/predict" style={linkStyle('/predict')}>🔮 Predictor</Link>
       <Link to="/news" style={linkStyle('/news')}>📰 News</Link>
+      <Link to="/talent" style={linkStyle('/talent')}>🌟 Talent</Link>
     </nav>
   );
 }
@@ -75,6 +77,7 @@ function App() {
         <Route path="/chat" element={<Chatbot />} />
         <Route path="/predict" element={<MatchPredictor />} />
         <Route path="/news" element={<News />} />
+        <Route path="/talent" element={<YoungTalent />} />
       </Routes>
     </Router>
   );
