@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import RatingBadge from '../components/RatingBadge';
 import { calculatePlayerRating, getRatingColor } from '../utils/ratingCalculator';
+import { generateMatchSummary, generateShortSummary } from '../utils/matchSummarizer';
 
 const api = axios.create({
   baseURL: '/v4',
@@ -166,6 +167,7 @@ export default function MatchDetail() {
         <button style={tabStyle('overview')} onClick={() => setActiveTab('overview')}>📋 Overview</button>
         <button style={tabStyle('ratings')} onClick={() => setActiveTab('ratings')}>⭐ Ratings</button>
         <button style={tabStyle('h2h')} onClick={() => setActiveTab('h2h')}>⚔️ Head to Head</button>
+        <button style={tabStyle('summary')} onClick={() => setActiveTab('summary')}>📝 Summary</button>
       </div>
 
       {/* Overview tab */}
@@ -404,6 +406,89 @@ export default function MatchDetail() {
           )}
         </div>
       )}
+      {/* Summary tab */}
+{activeTab === 'summary' && (
+  <div>
+    <div style={{
+      borderRadius: '12px', border: `1px solid ${dark.border}`,
+      overflow: 'hidden', marginBottom: '1.5rem'
+    }}>
+      <div style={{
+        padding: '0.75rem 1.5rem', backgroundColor: '#13161f',
+        fontWeight: 'bold', fontSize: '14px', color: dark.text,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      }}>
+        <span>📝 Match Summary</span>
+        {match.status === 'FINISHED' && (
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(generateMatchSummary(match));
+              alert('Summary copied to clipboard!');
+            }}
+            style={{
+              padding: '4px 12px', borderRadius: '6px',
+              border: `1px solid ${dark.border}`, backgroundColor: dark.card,
+              color: dark.muted, fontSize: '12px', cursor: 'pointer'
+            }}
+          >
+            📋 Copy
+          </button>
+        )}
+      </div>
+      <div style={{ padding: '1.5rem' }}>
+        {match.status === 'FINISHED' ? (
+          <div>
+            <p style={{
+              color: dark.text, fontSize: '15px', lineHeight: '1.8',
+              whiteSpace: 'pre-wrap'
+            }}>
+              {generateMatchSummary(match)}
+            </p>
+
+            {/* Short summary for social media */}
+            <div style={{
+              marginTop: '1.5rem', padding: '1rem', borderRadius: '8px',
+              border: `1px solid ${dark.border}`, backgroundColor: '#13161f'
+            }}>
+              <p style={{ color: dark.muted, fontSize: '12px', marginBottom: '0.5rem', fontWeight: '600' }}>
+                📱 SHORT VERSION (for social media)
+              </p>
+              <p style={{ color: dark.text, fontSize: '14px' }}>
+                {generateShortSummary(match)}
+              </p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(generateShortSummary(match));
+                  alert('Short summary copied!');
+                }}
+                style={{
+                  marginTop: '0.75rem', padding: '4px 12px', borderRadius: '6px',
+                  border: `1px solid ${dark.border}`, backgroundColor: dark.card,
+                  color: dark.muted, fontSize: '12px', cursor: 'pointer'
+                }}
+              >
+                📋 Copy Short Version
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p style={{ color: dark.muted, textAlign: 'center', padding: '2rem' }}>
+            Summary will be available after the match finishes.
+          </p>
+        )}
+      </div>
+    </div>
+
+    {/* AI upgrade notice */}
+    <div style={{
+      padding: '1rem', borderRadius: '8px',
+      border: `1px solid #f59e0b44`, backgroundColor: '#f59e0b11',
+      fontSize: '13px', color: '#f59e0b'
+    }}>
+      💡 <strong>Coming soon:</strong> AI-powered summaries with Claude will provide deeper tactical analysis and journalist-quality match reports.
+    </div>
+  </div>
+)}
     </div>
   );
 }
