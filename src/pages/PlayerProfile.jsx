@@ -46,20 +46,20 @@ export default function PlayerProfile() {
 
   useEffect(() => {
   setLoading(true);
-  api.get(`/persons/${id}`)
-    .then(async res => {
-      const playerData = res.data;
+  
+  const fetchData = async () => {
+    try {
+      const playerRes = await api.get(`/persons/${id}`);
+      const playerData = playerRes.data;
       
-      // Try to find stats from scorers across all leagues
       const leagueCodes = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
       let foundStats = null;
 
       for (const code of leagueCodes) {
         try {
+          await new Promise(resolve => setTimeout(resolve, 300));
           const scorersRes = await api.get(`/competitions/${code}/scorers?limit=50`);
-          const found = scorersRes.data.scorers.find(
-            s => s.player.id === parseInt(id)
-          );
+          const found = scorersRes.data.scorers.find(s => s.player.id === parseInt(id));
           if (found) {
             foundStats = {
               goals: found.goals,
@@ -74,18 +74,16 @@ export default function PlayerProfile() {
         }
       }
 
-      // Merge stats into player data
-      if (foundStats) {
-        playerData.statistics = [foundStats];
-      }
-
+      if (foundStats) playerData.statistics = [foundStats];
       setPlayer(playerData);
       setLoading(false);
-    })
-    .catch(() => {
+    } catch {
       setError('Failed to load player profile.');
       setLoading(false);
-    });
+    }
+  };
+
+  fetchData();
 }, [id]);
 
   if (loading) return <p style={{ padding: '2rem', color: glass.colors.muted }}>Loading player profile...</p>;

@@ -5,6 +5,7 @@ import RatingBadge from '../components/RatingBadge';
 import { calculatePlayerRating } from '../utils/ratingCalculator';
 import { generateMatchSummary, generateShortSummary } from '../utils/matchSummarizer';
 import MatchStatsChart from '../components/MatchStatsChart';
+import PitchMap from '../components/PitchMap';
 import { glass } from '../styles/glass';
 
 const api = axios.create({
@@ -22,12 +23,33 @@ export default function MatchDetail() {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    setLoading(true);
-    api.get(`/matches/${id}`)
-      .then(res => { setMatch(res.data); return api.get(`/matches/${id}/head2head?limit=10`); })
-      .then(res => { setH2h(res.data); setLoading(false); })
-      .catch(() => { setError('Failed to load match details.'); setLoading(false); });
-  }, [id]);
+  setLoading(true);
+  
+  const fetchData = async () => {
+    try {
+      // Add delay between requests to avoid rate limiting
+      const matchRes = await api.get(`/matches/${id}`);
+      setMatch(matchRes.data);
+      
+      // Wait 500ms before second request
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      try {
+        const h2hRes = await api.get(`/matches/${id}/head2head?limit=10`);
+        setH2h(h2hRes.data);
+      } catch {
+        setH2h({ matches: [] });
+      }
+      
+      setLoading(false);
+    } catch {
+      setError('Failed to load match details. Please wait a moment and try again.');
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [id]);
 
   if (loading) return <p style={{ padding: '2rem', color: glass.colors.muted }}>Loading match details...</p>;
   if (error) return <p style={{ padding: '2rem', color: glass.colors.red }}>{error}</p>;
@@ -222,45 +244,73 @@ export default function MatchDetail() {
         </div>
       )}
 
-      {/* Ratings tab */}
-      {activeTab === 'ratings' && (
-        <div>
-          {match.lineups && match.lineups.length === 2 ? (
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              {[0, 1].map(teamIndex => {
-                const isHome = teamIndex === 0;
-                const team = isHome ? home : away;
-                return (
-                  <div key={teamIndex} style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '0.75rem', color: glass.colors.text, fontSize: '15px' }}>
-                      <img src={team.crest} alt="" width={20} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                      {team.shortName || team.name}
-                    </div>
-                    {match.lineups[teamIndex].startXI?.map((p, i) => {
-                      const rating = getPlayerRating(p, isHome);
-                      return (
-                        <div key={i} onClick={() => navigate(`/player/${p.player.id}`)}
-                          className="hover-glow"
-                          style={{ ...glass.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', marginBottom: '4px', borderRadius: '8px', cursor: 'pointer' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ color: glass.colors.muted, fontSize: '12px', width: '16px' }}>{p.player.shirtNumber}</span>
-                            <span style={{ color: glass.colors.text, fontSize: '13px' }}>{p.player.name}</span>
-                          </div>
-                          <RatingBadge rating={rating} size="sm" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <p style={{ color: glass.colors.muted }}>Lineup data not available for this match.</p>
-            </div>
-          )}
+     {/* Lineup tab */}
+     {activeTab === 'ratings' && (
+  <div>
+    {match.lineups && match.lineups.length === 2 ? (
+      <div>
+        {/* Pitch Map */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+          <PitchMap
+            lineup={match.lineups[0].startXI}
+            teamName={home.shortName || home.name}
+            goals={match.goals}
+            isHome={true}
+            ratings={match.lineups[0].startXI?.reduce((acc, p) => {
+              acc[p.player.id] = getPlayerRating(p, true);
+              return acc;
+            }, {})}
+          />
+          <PitchMap
+            lineup={match.lineups[1].startXI}
+            teamName={away.shortName || away.name}
+            goals={match.goals}
+            isHome={false}
+            ratings={match.lineups[1].startXI?.reduce((acc, p) => {
+              acc[p.player.id] = getPlayerRating(p, false);
+              return acc;
+            }, {})}
+          />
         </div>
-      )}
+
+        {/* Player ratings list */}
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          {[0, 1].map(teamIndex => {
+            const isHome = teamIndex === 0;
+            const team = isHome ? home : away;
+            return (
+              <div key={teamIndex} style={{ flex: 1 }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '0.75rem', color: glass.colors.text, fontSize: '15px' }}>
+                  <img src={team.crest} alt="" width={20} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                  {team.shortName || team.name}
+                </div>
+                {match.lineups[teamIndex].startXI?.map((p, i) => {
+                  const rating = getPlayerRating(p, isHome);
+                  return (
+                    <div key={i} onClick={() => navigate(`/player/${p.player.id}`)}
+                      className="hover-glow"
+                      style={{ ...glass.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', marginBottom: '4px', borderRadius: '8px', cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: glass.colors.muted, fontSize: '12px', width: '16px' }}>{p.player.shirtNumber}</span>
+                        <span style={{ color: glass.colors.text, fontSize: '13px' }}>{p.player.name}</span>
+                      </div>
+                      <RatingBadge rating={rating} size="sm" />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    ) : (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <p style={{ color: glass.colors.muted }}>Lineup data not available for this match.</p>
+        <p style={{ color: glass.colors.muted, fontSize: '13px', marginTop: '0.5rem' }}>Ratings are calculated based on match result and goal contributions.</p>
+      </div>
+    )}
+  </div>
+)}
 
       {/* H2H tab */}
       {activeTab === 'h2h' && (

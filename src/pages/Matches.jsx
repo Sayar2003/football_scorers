@@ -32,7 +32,7 @@ export default function Matches() {
 
   useEffect(() => {
     fetchMatches(selectedLeague, true);
-    intervalRef.current = setInterval(() => fetchMatches(selectedLeague, false), 30000);
+    intervalRef.current = setInterval(() => fetchMatches(selectedLeague, false), 60000);
     return () => clearInterval(intervalRef.current);
   }, [selectedLeague]);
 
