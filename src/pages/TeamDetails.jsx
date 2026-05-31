@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { isFavoriteTeam, toggleFavoriteTeam } from '../utils/favorites';
 import { glass } from '../styles/glass';
 
 const api = axios.create({
@@ -16,6 +17,12 @@ export default function TeamDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('squad');
+const [isFav, setIsFav] = useState(isFavoriteTeam(parseInt(id)));
+
+const handleFavorite = () => {
+  toggleFavoriteTeam({ id: parseInt(id), name: team.name, crest: team.crest });
+  setIsFav(!isFav);
+};
 
   useEffect(() => {
     setLoading(true);
@@ -65,6 +72,14 @@ export default function TeamDetail() {
           <p style={{ color: glass.colors.muted, fontSize: '14px' }}>📍 {team.venue}</p>
           <p style={{ color: glass.colors.muted, fontSize: '14px' }}>🏠 Founded: {team.founded}</p>
           <p style={{ color: glass.colors.muted, fontSize: '14px' }}>🌐 {team.area?.name}</p>
+          <button onClick={handleFavorite} style={{
+  background: isFav ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
+  border: `1px solid ${isFav ? 'rgba(245,158,11,0.4)' : glass.colors.border}`,
+  borderRadius: '8px', color: isFav ? '#fbbf24' : glass.colors.muted,
+  cursor: 'pointer', padding: '6px 12px', fontSize: '14px', marginTop: '0.5rem'
+}}>
+  {isFav ? '⭐ Saved' : '☆ Save Team'}
+</button>
         </div>
       </div>
 

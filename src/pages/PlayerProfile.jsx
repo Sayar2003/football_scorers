@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { isFavoritePlayer, toggleFavoritePlayer } from '../utils/favorites';
 import { glass } from '../styles/glass';
 
 const api = axios.create({
@@ -31,6 +32,16 @@ export default function PlayerProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('stats');
+  
+  // FIXED: Moved inside the component so it correctly intercepts `id` from useParams
+  const [isFav, setIsFav] = useState(() => isFavoritePlayer(parseInt(id)));
+
+  // FIXED: Moved inside the component so it has closure over `id`, `player`, and `isFav`
+  const handleFavorite = () => {
+    if (!player) return; // Guard clause in case user clicks before player data resolves
+    toggleFavoritePlayer({ id: parseInt(id), name: player.name, nationality: player.nationality });
+    setIsFav(!isFav);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -85,6 +96,14 @@ export default function PlayerProfile() {
             <span style={{ color: glass.colors.muted, fontSize: '14px' }}>🎂 {age} years</span>
             {player.shirtNumber && <span style={{ color: glass.colors.muted, fontSize: '14px' }}>👕 #{player.shirtNumber}</span>}
           </div>
+          <button onClick={handleFavorite} style={{
+            background: isFav ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${isFav ? 'rgba(245,158,11,0.4)' : glass.colors.border}`,
+            borderRadius: '8px', color: isFav ? '#fbbf24' : glass.colors.muted,
+            cursor: 'pointer', padding: '6px 12px', fontSize: '14px', marginTop: '0.5rem'
+          }}>
+            {isFav ? '⭐ Saved' : '☆ Save Player'}
+          </button>
           {currentTeam && (
             <div onClick={() => navigate(`/team/${currentTeam.id}`)}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '0.75rem', cursor: 'pointer' }}>

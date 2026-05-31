@@ -12,6 +12,7 @@ import News from './pages/News';
 import YoungTalent from './pages/YoungTalent';
 import ContentCreator from './pages/ContentCreator';
 import Chatbot from './pages/Chatbot';
+import Favorites from './pages/Favorites';
 import './index.css';
 
 const NAV_LINKS = [
@@ -25,6 +26,7 @@ const NAV_LINKS = [
   { path: '/search', label: '🔍 Search' },
   { path: '/chat', label: '🤖 AI Chat' },
   { path: '/creator', label: '🎨 Creator' },
+  { path: '/favorites', label: '⭐ Favorites' },
 ];
 
 function Navbar() {
@@ -107,6 +109,7 @@ function App() {
         <Route path="/talent" element={<YoungTalent />} />
         <Route path="/creator" element={<ContentCreator />} />
         <Route path="/chat" element={<Chatbot />} />
+        <Route path="/favorites" element={<Favorites />} />
       </Routes>
     </Router>
   );
