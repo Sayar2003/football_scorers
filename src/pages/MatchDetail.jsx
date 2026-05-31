@@ -4,6 +4,7 @@ import axios from 'axios';
 import RatingBadge from '../components/RatingBadge';
 import { calculatePlayerRating } from '../utils/ratingCalculator';
 import { generateMatchSummary, generateShortSummary } from '../utils/matchSummarizer';
+import MatchStatsChart from '../components/MatchStatsChart';
 import { glass } from '../styles/glass';
 
 const api = axios.create({
@@ -142,6 +143,15 @@ export default function MatchDetail() {
       {/* Overview tab */}
       {activeTab === 'overview' && (
         <div>
+          {/* Animated Stats Chart */}
+{isFinished && (
+  <MatchStatsChart
+    homeTeam={home.shortName || home.name}
+    awayTeam={away.shortName || away.name}
+    homeScore={score.home}
+    awayScore={score.away}
+  />
+)}
           {isFinished && (
             <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
               <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>

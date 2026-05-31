@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { isFavoritePlayer, toggleFavoritePlayer } from '../utils/favorites';
+import PlayerRadarChart from '../components/PlayerRadarChart';
 import { glass } from '../styles/glass';
 
 const api = axios.create({
@@ -44,11 +45,48 @@ export default function PlayerProfile() {
   };
 
   useEffect(() => {
-    setLoading(true);
-    api.get(`/persons/${id}`)
-      .then(res => { setPlayer(res.data); setLoading(false); })
-      .catch(() => { setError('Failed to load player profile.'); setLoading(false); });
-  }, [id]);
+  setLoading(true);
+  api.get(`/persons/${id}`)
+    .then(async res => {
+      const playerData = res.data;
+      
+      // Try to find stats from scorers across all leagues
+      const leagueCodes = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
+      let foundStats = null;
+
+      for (const code of leagueCodes) {
+        try {
+          const scorersRes = await api.get(`/competitions/${code}/scorers?limit=50`);
+          const found = scorersRes.data.scorers.find(
+            s => s.player.id === parseInt(id)
+          );
+          if (found) {
+            foundStats = {
+              goals: found.goals,
+              assists: found.assists,
+              playedMatches: found.playedMatches,
+              penalties: found.penalties,
+            };
+            break;
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      // Merge stats into player data
+      if (foundStats) {
+        playerData.statistics = [foundStats];
+      }
+
+      setPlayer(playerData);
+      setLoading(false);
+    })
+    .catch(() => {
+      setError('Failed to load player profile.');
+      setLoading(false);
+    });
+}, [id]);
 
   if (loading) return <p style={{ padding: '2rem', color: glass.colors.muted }}>Loading player profile...</p>;
   if (error) return <p style={{ padding: '2rem', color: glass.colors.red }}>{error}</p>;
@@ -135,6 +173,13 @@ export default function PlayerProfile() {
             <StatBox label="Matches" value={seasonStats?.playedMatches} color={glass.colors.blue} />
             <StatBox label="Penalties" value={seasonStats?.penalties} color="#fbbf24" />
           </div>
+
+          {/* Radar Chart */}
+<PlayerRadarChart
+  seasonStats={seasonStats}
+  position={player.position}
+  playerName={player.name}
+/>
 
           <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
             <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>👤 Player Info</div>
