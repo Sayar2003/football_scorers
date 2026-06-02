@@ -9,7 +9,7 @@ const api = axios.create({
 
 const LEAGUES = {
   PL:  { name: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  PD:  { name: 'La Liga',        flag: '🇪🇸' },
+  PD:  { name: 'La Liga',         flag: '🇪🇸' },
   BL1: { name: 'Bundesliga',     flag: '🇩🇪' },
   SA:  { name: 'Serie A',        flag: '🇮🇹' },
   FL1: { name: 'Ligue 1',        flag: '🇫🇷' },
@@ -133,7 +133,16 @@ export default function MatchPredictor() {
     border: `1px solid ${glass.colors.border}`,
     background: 'rgba(255,255,255,0.04)', color: glass.colors.text,
     fontSize: '14px', cursor: 'pointer', outline: 'none',
-    backdropFilter: 'blur(10px)'
+    backdropFilter: 'blur(10px)',
+    WebkitAppearance: 'none', /* Removes native OS styles on Safari/Chrome */
+    MozAppearance: 'none'
+  };
+
+  // Explicit styling specifically targeting the expanded overlay list options
+  const optionStyle = {
+    background: '#151c2c', // Solid dark color matching your UI theme
+    color: glass.colors.text || '#ffffff',
+    padding: '10px'
   };
 
   return (
@@ -163,16 +172,24 @@ export default function MatchPredictor() {
             <div style={{ flex: 1, minWidth: '200px' }}>
               <label style={{ color: glass.colors.muted, fontSize: '13px', display: 'block', marginBottom: '6px' }}>🏠 Home Team</label>
               <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)} style={selectStyle}>
-                <option value="">Select home team...</option>
-                {standings.map(s => <option key={s.team.id} value={s.team.id}>{s.team.name}</option>)}
+                <option value="" style={optionStyle}>Select home team...</option>
+                {standings.map(s => (
+                  <option key={s.team.id} value={s.team.id} style={optionStyle}>
+                    {s.team.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div style={{ color: glass.colors.muted, fontSize: '20px', fontWeight: 'bold', paddingBottom: '8px' }}>VS</div>
             <div style={{ flex: 1, minWidth: '200px' }}>
               <label style={{ color: glass.colors.muted, fontSize: '13px', display: 'block', marginBottom: '6px' }}>✈️ Away Team</label>
               <select value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)} style={selectStyle}>
-                <option value="">Select away team...</option>
-                {standings.map(s => <option key={s.team.id} value={s.team.id}>{s.team.name}</option>)}
+                <option value="" style={optionStyle}>Select away team...</option>
+                {standings.map(s => (
+                  <option key={s.team.id} value={s.team.id} style={optionStyle}>
+                    {s.team.name}
+                  </option>
+                ))}
               </select>
             </div>
             <button onClick={handlePredict} disabled={loading || !homeTeam || !awayTeam}
