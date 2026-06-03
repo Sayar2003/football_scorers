@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import html2canvas from 'html2canvas';
-import { glass, leagueButtonStyle } from '../styles/glass';
+import { useTheme } from '../context/ThemeContext';
+import { getGlass } from '../styles/glass';
 
 const toBase64 = (url) => {
   return new Promise((resolve) => {
@@ -44,11 +45,11 @@ export default function ContentCreator() {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const cardRef = useRef(null);
+  const { isDark } = useTheme();
+  const glass = getGlass(isDark);
 
   useEffect(() => {
     setLoading(true);
-    
-    // Clear old state completely so you don't see cross-contamination if API hits a rate limit
     setMatches([]);
     setScorers([]);
     setStandings([]);
@@ -91,8 +92,9 @@ export default function ContentCreator() {
         })
       );
 
+      // Uses exact background layer variant corresponding to your theme setting
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#0f1117',
+        backgroundColor: isDark ? '#0f1117' : '#ffffff',
         scale: 2,
         useCORS: true,
         allowTaint: true,
@@ -122,7 +124,6 @@ export default function ContentCreator() {
   const homeScore = selectedMatchData?.score?.fullTime?.home ?? '-';
   const awayScore = selectedMatchData?.score?.fullTime?.away ?? '-';
 
-  // --- CAPTION GENERATION LOGIC ---
   const matchCaption = selectedMatchData
     ? `⚽ ${selectedMatchData.homeTeam.shortName || selectedMatchData.homeTeam.name} ${homeScore} - ${awayScore} ${selectedMatchData.awayTeam.shortName || selectedMatchData.awayTeam.name}\n\n🏆 ${leagueName}\n📅 ${new Date(selectedMatchData.utcDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}\n\n#Football #${leagueName.replace(/\s+/g, '')} #FootballApp`
     : '';
@@ -134,6 +135,17 @@ export default function ContentCreator() {
   const standingsCaption = standings.length > 0
     ? `📊 ${leagueName} Standings\n\n${standings.slice(0, 5).map((s, i) => `${i + 1}. ${s.team.name} — ${s.points} pts`).join('\n')}\n\n#Football #${leagueName.replace(/\s+/g, '')} #FootballApp`
     : '';
+
+  // Clean shared card style that flips naturally based on current mode context
+  const cardPreviewBaseStyle = {
+    background: isDark 
+      ? 'linear-gradient(135deg, #0f1117 0%, #1a1d27 100%)' 
+      : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    borderRadius: '16px', 
+    padding: '2rem', 
+    minWidth: '320px',
+    boxShadow: isDark ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05)'
+  };
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
@@ -155,13 +167,21 @@ export default function ContentCreator() {
             key={type.id} 
             onClick={() => setCardType(type.id)} 
             style={{
-              ...(glass.button || {}),
-              padding: '0.6rem 1.2rem', cursor: 'pointer', borderRadius: '8px', border: '1px solid',
-              borderColor: cardType === type.id ? 'rgba(59,130,246,0.4)' : glass.colors.border,
-              background: cardType === type.id ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.03)',
-              color: cardType === type.id ? glass.colors.blue : glass.colors.muted,
+              padding: '0.6rem 1.2rem', 
+              cursor: 'pointer', 
+              borderRadius: '8px', 
+              border: '1px solid',
+              borderColor: cardType === type.id 
+                ? (isDark ? 'rgba(59,130,246,0.4)' : '#3b82f6') 
+                : glass.colors.border,
+              background: cardType === type.id 
+                ? (isDark ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.08)') 
+                : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
+              color: cardType === type.id ? (isDark ? glass.colors.blue : '#2563eb') : glass.colors.muted,
               backdropFilter: 'blur(10px)',
-              fontWeight: cardType === type.id ? '600' : 'normal', fontSize: '14px'
+              fontWeight: cardType === type.id ? '600' : 'normal', 
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
             }}
           >
             {type.label}
@@ -169,23 +189,38 @@ export default function ContentCreator() {
         ))}
       </div>
 
-      {/* League selector */}
+      {/* League selector row */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {Object.entries(LEAGUES).map(([code, league]) => (
-          <button 
-            key={code} 
-            onClick={() => setSelectedLeague(code)} 
-            style={{
-              ...leagueButtonStyle,
-              ...leagueButtonStyle(selectedLeague === code)
-            }}
-          >
-            {league.flag} {league.name}
-          </button>
-        ))}
+        {Object.entries(LEAGUES).map(([code, league]) => {
+          const isSelected = selectedLeague === code;
+          return (
+            <button 
+              key={code} 
+              onClick={() => setSelectedLeague(code)} 
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                fontSize: '13px',
+                fontWeight: isSelected ? '600' : '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                border: isSelected 
+                  ? '1px solid #3b82f6' 
+                  : `1px solid ${glass.colors.border}`,
+                background: isSelected 
+                  ? 'linear-gradient(135deg, #3b82f6, #2563eb)' 
+                  : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
+                color: isSelected ? '#ffffff' : glass.colors.text,
+                boxShadow: isSelected && !isDark ? '0 4px 12px rgba(59, 130, 246, 0.25)' : 'none'
+              }}
+            >
+              {league.flag} {league.name}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Match selector Dropdown */}
+      {/* Match Selector Dropdown */}
       {cardType === 'match' && (
         <select
           value={selectedMatch}
@@ -193,20 +228,20 @@ export default function ContentCreator() {
           style={{
             width: '100%', padding: '0.75rem', borderRadius: '8px',
             border: `1px solid ${glass.colors.border}`,
-            background: '#1a1d27',
+            background: isDark ? '#1a1d27' : '#ffffff',
             color: glass.colors.text, fontSize: '14px',
             marginBottom: '1.5rem', cursor: 'pointer',
             outline: 'none'
           }}
         >
-          <option value="" style={{ background: '#1a1d27' }}>
+          <option value="" style={{ background: isDark ? '#1a1d27' : '#ffffff' }}>
             {loading ? "Loading matches..." : "Select a match..."}
           </option>
           {matches.map(m => {
             const hScore = m.score?.fullTime?.home ?? '-';
             const aScore = m.score?.fullTime?.away ?? '-';
             return (
-              <option key={m.id} value={m.id} style={{ background: '#1a1d27' }}>
+              <option key={m.id} value={m.id} style={{ background: isDark ? '#1a1d27' : '#ffffff' }}>
                 {m.homeTeam.shortName || m.homeTeam.name} {hScore} - {aScore} {m.awayTeam.shortName || m.awayTeam.name} ({m.status})
               </option>
             );
@@ -214,20 +249,24 @@ export default function ContentCreator() {
         </select>
       )}
 
-      {/* Player selector Dropdown */}
+      {/* Player Selector Dropdown */}
       {cardType === 'player' && (
         <select
           value={selectedPlayer}
           onChange={(e) => setSelectedPlayer(e.target.value)}
           style={{
             width: '100%', padding: '0.75rem', borderRadius: '8px',
-            border: `1px solid ${glass.colors.border}`, backgroundColor: '#1a1d27',
-            color: glass.colors.text, fontSize: '14px', marginBottom: '1.5rem', cursor: 'pointer'
+            border: `1px solid ${glass.colors.border}`, 
+            background: isDark ? '#1a1d27' : '#ffffff',
+            color: glass.colors.text, fontSize: '14px', marginBottom: '1.5rem', cursor: 'pointer',
+            outline: 'none'
           }}
         >
-          <option value="">{loading ? "Loading players..." : "Select a player..."}</option>
+          <option value="" style={{ background: isDark ? '#1a1d27' : '#ffffff' }}>
+            {loading ? "Loading players..." : "Select a player..."}
+          </option>
           {scorers.map(s => (
-            <option key={s.player.id} value={s.player.id} style={{ background: '#1a1d27' }}>
+            <option key={s.player.id} value={s.player.id} style={{ background: isDark ? '#1a1d27' : '#ffffff' }}>
               {s.player.name} — {s.goals} goals ({s.team.name})
             </option>
           ))}
@@ -242,9 +281,8 @@ export default function ContentCreator() {
           {/* MATCH CARD */}
           {cardType === 'match' && selectedMatchData && (
             <div ref={cardRef} style={{
-              background: 'linear-gradient(135deg, #0f1117 0%, #1a1d27 100%)',
-              borderRadius: '16px', padding: '2rem', border: `1px solid ${glass.colors.blue}`,
-              minWidth: '320px'
+              ...cardPreviewBaseStyle,
+              border: isDark ? `1px solid ${glass.colors.blue}` : '1px solid rgba(59, 130, 246, 0.2)'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <span style={{ color: glass.colors.muted, fontSize: '13px' }}>{leagueFlag} {leagueName}</span>
@@ -257,10 +295,11 @@ export default function ContentCreator() {
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{
                     width: '56px', height: '56px', borderRadius: '50%',
-                    backgroundColor: glass.colors.blue, display: 'flex',
+                    backgroundColor: '#3b82f6', display: 'flex',
                     alignItems: 'center', justifyContent: 'center',
                     fontSize: '20px', fontWeight: 'bold', color: 'white',
-                    marginBottom: '8px', margin: '0 auto 8px'
+                    marginBottom: '8px', margin: '0 auto 8px',
+                    boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)'
                   }}>
                     {(selectedMatchData.homeTeam.shortName || selectedMatchData.homeTeam.name).charAt(0)}
                   </div>
@@ -282,7 +321,8 @@ export default function ContentCreator() {
                     backgroundColor: '#ef4444', display: 'flex',
                     alignItems: 'center', justifyContent: 'center',
                     fontSize: '20px', fontWeight: 'bold', color: 'white',
-                    marginBottom: '8px', margin: '0 auto 8px'
+                    marginBottom: '8px', margin: '0 auto 8px',
+                    boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)'
                   }}>
                     {(selectedMatchData.awayTeam.shortName || selectedMatchData.awayTeam.name).charAt(0)}
                   </div>
@@ -292,7 +332,7 @@ export default function ContentCreator() {
                 </div>
               </div>
 
-              <div style={{ textAlign: 'center', marginTop: '1.5rem', color: glass.colors.blue, fontSize: '12px', fontWeight: '600' }}>
+              <div style={{ textAlign: 'center', marginTop: '1.5rem', color: '#3b82f6', ...glass.text, fontSize: '12px', fontWeight: '600' }}>
                 ⚽ FootballApp
               </div>
             </div>
@@ -301,9 +341,8 @@ export default function ContentCreator() {
           {/* PLAYER CARD */}
           {cardType === 'player' && selectedPlayerData && (
             <div ref={cardRef} style={{
-              background: 'linear-gradient(135deg, #0f1117 0%, #1a1d27 100%)',
-              borderRadius: '16px', padding: '2rem', border: '1px solid #f59e0b',
-              minWidth: '320px'
+              ...cardPreviewBaseStyle,
+              border: isDark ? '1px solid #f59e0b' : '1px solid rgba(245, 158, 11, 0.2)'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                 <span style={{ color: glass.colors.muted, fontSize: '13px' }}>{leagueFlag} {leagueName}</span>
@@ -315,7 +354,8 @@ export default function ContentCreator() {
                   width: '64px', height: '64px', borderRadius: '50%',
                   backgroundColor: '#f59e0b', display: 'flex',
                   alignItems: 'center', justifyContent: 'center',
-                  fontSize: '28px', fontWeight: 'bold', color: 'white', flexShrink: 0
+                  fontSize: '28px', fontWeight: 'bold', color: 'white', flexShrink: 0,
+                  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
                 }}>
                   {selectedPlayerData.player.name.charAt(0)}
                 </div>
@@ -326,7 +366,7 @@ export default function ContentCreator() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                     <span style={{
                       width: '18px', height: '18px', borderRadius: '50%',
-                      backgroundColor: glass.colors.blue, display: 'inline-flex',
+                      backgroundColor: '#3b82f6', display: 'inline-flex',
                       alignItems: 'center', justifyContent: 'center',
                       fontSize: '10px', fontWeight: 'bold', color: 'white'
                     }}>
@@ -341,12 +381,12 @@ export default function ContentCreator() {
                 {[
                   { label: 'Goals', value: selectedPlayerData.goals, color: '#ef4444' },
                   { label: 'Assists', value: selectedPlayerData.assists ?? 0, color: '#10b981' },
-                  { label: 'Matches', value: selectedPlayerData.playedMatches ?? 0, color: glass.colors.blue },
+                  { label: 'Matches', value: selectedPlayerData.playedMatches ?? 0, color: '#3b82f6' },
                 ].map(stat => (
                   <div key={stat.label} style={{
                     flex: 1, textAlign: 'center', padding: '0.75rem',
-                    backgroundColor: stat.color + '22', borderRadius: '10px',
-                    border: `1px solid ${stat.color}44`
+                    backgroundColor: stat.color + '15', borderRadius: '10px',
+                    border: `1px solid ${stat.color}25`
                   }}>
                     <div style={{ fontSize: '24px', fontWeight: 'bold', color: stat.color }}>{stat.value}</div>
                     <div style={{ fontSize: '11px', color: glass.colors.muted, marginTop: '2px' }}>{stat.label}</div>
@@ -354,7 +394,7 @@ export default function ContentCreator() {
                 ))}
               </div>
 
-              <div style={{ textAlign: 'center', marginTop: '1.5rem', color: glass.colors.blue, fontSize: '12px', fontWeight: '600' }}>
+              <div style={{ textAlign: 'center', marginTop: '1.5rem', color: '#3b82f6', fontSize: '12px', fontWeight: '600' }}>
                 ⚽ FootballApp
               </div>
             </div>
@@ -363,9 +403,8 @@ export default function ContentCreator() {
           {/* STANDINGS CARD */}
           {cardType === 'standings' && standings.length > 0 && (
             <div ref={cardRef} style={{
-              background: 'linear-gradient(135deg, #0f1117 0%, #1a1d27 100%)',
-              borderRadius: '16px', padding: '2rem', border: '1px solid #10b981',
-              minWidth: '320px'
+              ...cardPreviewBaseStyle,
+              border: isDark ? '1px solid #10b981' : '1px solid rgba(16, 185, 129, 0.2)'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <span style={{ color: glass.colors.text, fontWeight: '700', fontSize: '16px' }}>
@@ -381,13 +420,13 @@ export default function ContentCreator() {
                 }}>
                   <span style={{
                     width: '22px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold',
-                    color: i < 4 ? '#60a5fa' : i >= 7 ? '#f87171' : glass.colors.muted
+                    color: i < 4 ? '#3b82f6' : i >= 7 ? '#ef4444' : glass.colors.muted
                   }}>
                     {row.position}
                   </span>
                   <span style={{
                     width: '20px', height: '20px', borderRadius: '50%',
-                    backgroundColor: glass.colors.blue, display: 'inline-flex',
+                    backgroundColor: '#3b82f6', display: 'inline-flex',
                     alignItems: 'center', justifyContent: 'center',
                     fontSize: '10px', fontWeight: 'bold', color: 'white', flexShrink: 0
                   }}>
@@ -396,22 +435,23 @@ export default function ContentCreator() {
                   <span style={{ flex: 1, color: glass.colors.text, fontSize: '13px', fontWeight: '500' }}>
                     {row.team.shortName || row.team.name}
                   </span>
-                  <span style={{ color: glass.colors.blue, fontWeight: 'bold', fontSize: '14px' }}>{row.points}</span>
+                  <span style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '14px' }}>{row.points}</span>
                 </div>
               ))}
 
-              <div style={{ textAlign: 'center', marginTop: '1rem', color: glass.colors.blue, fontSize: '12px', fontWeight: '600' }}>
+              <div style={{ textAlign: 'center', marginTop: '1rem', color: '#3b82f6', fontSize: '12px', fontWeight: '600' }}>
                 ⚽ FootballApp
               </div>
             </div>
           )}
 
-          {/* Empty state */}
+          {/* Empty state container */}
           {((cardType === 'match' && !selectedMatchData) ||
             (cardType === 'player' && !selectedPlayerData)) && (
             <div style={{
               padding: '3rem', borderRadius: '16px', border: `2px dashed ${glass.colors.border}`,
-              textAlign: 'center', color: glass.colors.muted
+              textAlign: 'center', color: glass.colors.muted,
+              background: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)'
             }}>
               <p style={{ fontSize: '32px', marginBottom: '1rem' }}>🎨</p>
               <p>Select a {cardType === 'match' ? 'match' : 'player'} to preview the card</p>
@@ -419,32 +459,33 @@ export default function ContentCreator() {
           )}
         </div>
 
-        {/* Actions & Captions panel Column */}
+        {/* Actions & Captions sidebar panel */}
         <div style={{ width: '280px' }}>
           <p style={{ color: glass.colors.muted, fontSize: '13px', marginBottom: '0.75rem' }}>Actions</p>
 
-          {/* Download button */}
           <button
             onClick={downloadCard}
             disabled={downloading || (cardType === 'match' && !selectedMatchData) || (cardType === 'player' && !selectedPlayerData)}
             style={{
               width: '100%', padding: '0.75rem', borderRadius: '8px',
-              border: 'none', backgroundColor: glass.colors.blue, color: 'white',
+              border: 'none', backgroundColor: '#3b82f6', color: 'white',
               fontWeight: 'bold', fontSize: '14px', cursor: 'pointer',
               marginBottom: '1.5rem',
-              opacity: (cardType === 'match' && !selectedMatchData) || (cardType === 'player' && !selectedPlayerData) ? 0.5 : 1
+              opacity: (cardType === 'match' && !selectedMatchData) || (cardType === 'player' && !selectedPlayerData) ? 0.5 : 1,
+              boxShadow: !isDark ? '0 4px 14px rgba(59, 130, 246, 0.3)' : 'none'
             }}
           >
             {downloading ? '⏳ Downloading...' : '⬇️ Download Card'}
           </button>
 
-          {/* RESTORED: Copy caption (Match) */}
+          {/* Caption wrapper (Match) */}
           {(cardType === 'match' && selectedMatchData) && (
             <div style={{ marginBottom: '1.5rem' }}>
               <p style={{ color: glass.colors.muted, fontSize: '13px', marginBottom: '0.5rem' }}>📝 Caption</p>
               <div style={{
                 padding: '0.75rem', borderRadius: '8px',
-                border: `1px solid ${glass.colors.border}`, backgroundColor: glass.card || 'rgba(255,255,255,0.02)',
+                border: `1px solid ${glass.colors.border}`, 
+                backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
                 color: glass.colors.text, fontSize: '12px', lineHeight: '1.6',
                 marginBottom: '0.5rem', whiteSpace: 'pre-wrap'
               }}>
@@ -454,7 +495,8 @@ export default function ContentCreator() {
                 onClick={() => copyCaption(matchCaption)}
                 style={{
                   width: '100%', padding: '0.5rem', borderRadius: '8px',
-                  border: `1px solid ${glass.colors.border}`, backgroundColor: glass.card || 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${glass.colors.border}`, 
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                   color: glass.colors.text, fontSize: '13px', cursor: 'pointer'
                 }}
               >
@@ -463,13 +505,14 @@ export default function ContentCreator() {
             </div>
           )}
 
-          {/* RESTORED: Copy caption (Player) */}
+          {/* Caption wrapper (Player) */}
           {(cardType === 'player' && selectedPlayerData) && (
             <div style={{ marginBottom: '1.5rem' }}>
               <p style={{ color: glass.colors.muted, fontSize: '13px', marginBottom: '0.5rem' }}>📝 Caption</p>
               <div style={{
                 padding: '0.75rem', borderRadius: '8px',
-                border: `1px solid ${glass.colors.border}`, backgroundColor: glass.card || 'rgba(255,255,255,0.02)',
+                border: `1px solid ${glass.colors.border}`, 
+                backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
                 color: glass.colors.text, fontSize: '12px', lineHeight: '1.6',
                 marginBottom: '0.5rem', whiteSpace: 'pre-wrap'
               }}>
@@ -479,7 +522,8 @@ export default function ContentCreator() {
                 onClick={() => copyCaption(playerCaption)}
                 style={{
                   width: '100%', padding: '0.5rem', borderRadius: '8px',
-                  border: `1px solid ${glass.colors.border}`, backgroundColor: glass.card || 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${glass.colors.border}`, 
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                   color: glass.colors.text, fontSize: '13px', cursor: 'pointer'
                 }}
               >
@@ -488,13 +532,14 @@ export default function ContentCreator() {
             </div>
           )}
 
-          {/* RESTORED: Copy caption (Standings) */}
+          {/* Caption wrapper (Standings) */}
           {cardType === 'standings' && standings.length > 0 && (
             <div style={{ marginBottom: '1.5rem' }}>
               <p style={{ color: glass.colors.muted, fontSize: '13px', marginBottom: '0.5rem' }}>📝 Caption</p>
               <div style={{
                 padding: '0.75rem', borderRadius: '8px',
-                border: `1px solid ${glass.colors.border}`, backgroundColor: glass.card || 'rgba(255,255,255,0.02)',
+                border: `1px solid ${glass.colors.border}`, 
+                backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
                 color: glass.colors.text, fontSize: '12px', lineHeight: '1.6',
                 marginBottom: '0.5rem', whiteSpace: 'pre-wrap'
               }}>
@@ -504,7 +549,8 @@ export default function ContentCreator() {
                 onClick={() => copyCaption(standingsCaption)}
                 style={{
                   width: '100%', padding: '0.5rem', borderRadius: '8px',
-                  border: `1px solid ${glass.colors.border}`, backgroundColor: glass.card || 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${glass.colors.border}`, 
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                   color: glass.colors.text, fontSize: '13px', cursor: 'pointer'
                 }}
               >
@@ -513,10 +559,11 @@ export default function ContentCreator() {
             </div>
           )}
 
-          {/* Tips block */}
+          {/* Tips block information box */}
           <div style={{
             marginTop: '1.5rem', padding: '1rem', borderRadius: '8px',
-            border: `1px solid ${glass.colors.border}`, backgroundColor: glass.card || 'rgba(255,255,255,0.02)'
+            border: `1px solid ${glass.colors.border}`, 
+            backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
           }}>
             <p style={{ color: glass.colors.text, fontSize: '13px', fontWeight: '600', marginBottom: '0.5rem' }}>💡 Tips</p>
             <p style={{ color: glass.colors.muted, fontSize: '12px', lineHeight: '1.6' }}>

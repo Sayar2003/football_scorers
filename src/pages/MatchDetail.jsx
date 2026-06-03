@@ -6,7 +6,8 @@ import { calculatePlayerRating } from '../utils/ratingCalculator';
 import { generateMatchSummary, generateShortSummary } from '../utils/matchSummarizer';
 import MatchStatsChart from '../components/MatchStatsChart';
 import PitchMap from '../components/PitchMap';
-import { glass } from '../styles/glass';
+import { useTheme } from '../context/ThemeContext';
+import { getGlass } from '../styles/glass';
 
 const api = axios.create({
   baseURL: '/v4',
@@ -21,35 +22,40 @@ export default function MatchDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const { isDark } = useTheme();
+  const glass = getGlass(isDark);
 
   useEffect(() => {
-  setLoading(true);
-  
-  const fetchData = async () => {
-    try {
-      // Add delay between requests to avoid rate limiting
-      const matchRes = await api.get(`/matches/${id}`);
-      setMatch(matchRes.data);
-      
-      // Wait 500ms before second request
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+    let isMounted = true;
+    setLoading(true);
+    
+    const fetchData = async () => {
       try {
-        const h2hRes = await api.get(`/matches/${id}/head2head?limit=10`);
-        setH2h(h2hRes.data);
+        const matchRes = await api.get(`/matches/${id}`);
+        if (!isMounted) return;
+        setMatch(matchRes.data);
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        try {
+          const h2hRes = await api.get(`/matches/${id}/head2head?limit=10`);
+          if (isMounted) setH2h(h2hRes.data);
+        } catch {
+          if (isMounted) setH2h({ matches: [] });
+        }
+        
+        if (isMounted) setLoading(false);
       } catch {
-        setH2h({ matches: [] });
+        if (isMounted) {
+          setError('Failed to load match details. Please wait a moment and try again.');
+          setLoading(false);
+        }
       }
-      
-      setLoading(false);
-    } catch {
-      setError('Failed to load match details. Please wait a moment and try again.');
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchData();
-}, [id]);
+    fetchData();
+    return () => { isMounted = false; };
+  }, [id]);
 
   if (loading) return <p style={{ padding: '2rem', color: glass.colors.muted }}>Loading match details...</p>;
   if (error) return <p style={{ padding: '2rem', color: glass.colors.red }}>{error}</p>;
@@ -64,11 +70,18 @@ export default function MatchDetail() {
   const isDraw = isFinished && score.home === score.away;
 
   const tabStyle = (tab) => ({
-    padding: '0.6rem 1.2rem', cursor: 'pointer', borderRadius: '8px', border: 'none',
-    fontWeight: '600', fontSize: '13px',
-    background: activeTab === tab ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(255,255,255,0.05)',
+    padding: '0.6rem 1.2rem', 
+    cursor: 'pointer', 
+    borderRadius: '8px', 
+    border: 'none',
+    fontWeight: '600', 
+    fontSize: '13px',
+    background: activeTab === tab 
+      ? 'linear-gradient(135deg, #3b82f6, #2563eb)' 
+      : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
     color: activeTab === tab ? 'white' : glass.colors.muted,
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s ease',
+    boxShadow: activeTab === tab ? '0 4px 12px rgba(59,130,246,0.25)' : 'none'
   });
 
   const h2hMatches = h2h?.matches || [];
@@ -91,6 +104,9 @@ export default function MatchDetail() {
   const homePossession = isFinished ? Math.min(70, Math.max(30, 50 + (score.home - score.away) * 5)) : 50;
   const awayPossession = 100 - homePossession;
 
+  // Header banner background adaptive styling
+  const headerSectionBg = isDark ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.03)';
+
   return (
     <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }} className="fade-in">
       <button onClick={() => navigate(-1)} style={{ ...glass.button.secondary, padding: '0.5rem 1rem', marginBottom: '1.5rem' }}>
@@ -109,22 +125,28 @@ export default function MatchDetail() {
             <div style={{ fontWeight: 'bold', fontSize: '18px', color: homeWon ? glass.colors.blue : glass.colors.text }}>
               {home.shortName || home.name}
             </div>
-            {homeWon && <div style={{ fontSize: '11px', color: glass.colors.blue, marginTop: '2px' }}>WINNER ⭐</div>}
+            {homeWon && <div style={{ fontSize: '11px', color: glass.colors.blue, marginTop: '2px', fontWeight: '700' }}>WINNER ⭐</div>}
           </div>
 
           <div style={{ textAlign: 'center' }}>
             {match.status === 'SCHEDULED' ? (
-              <div style={{ fontSize: '24px', color: glass.colors.muted }}>vs</div>
+              <div style={{ fontSize: '24px', color: glass.colors.muted, fontWeight: '600' }}>vs</div>
             ) : (
               <div style={{
-                fontSize: '48px', fontWeight: '900', color: glass.colors.text,
-                background: 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.8))',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'
+                fontSize: '48px', 
+                fontWeight: '900', 
+                color: glass.colors.text,
+                background: isDark 
+                  ? 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.8))' 
+                  : `linear-gradient(135deg, ${glass.colors.text}, ${glass.colors.muted})`,
+                WebkitBackgroundClip: 'text', 
+                WebkitTextFillColor: 'transparent', 
+                backgroundClip: 'text'
               }}>
                 {score.home ?? '-'} : {score.away ?? '-'}
               </div>
             )}
-            <div style={{ fontSize: '13px', marginTop: '4px', color: match.status === 'IN_PLAY' ? '#16a34a' : glass.colors.muted }}>
+            <div style={{ fontSize: '13px', marginTop: '4px', fontWeight: '600', color: match.status === 'IN_PLAY' ? '#16a34a' : glass.colors.muted }}>
               {match.status === 'IN_PLAY' ? '🔴 LIVE' : match.status === 'FINISHED' ? 'Full Time' : 'Upcoming'}
             </div>
           </div>
@@ -134,19 +156,19 @@ export default function MatchDetail() {
             <div style={{ fontWeight: 'bold', fontSize: '18px', color: awayWon ? glass.colors.blue : glass.colors.text }}>
               {away.shortName || away.name}
             </div>
-            {awayWon && <div style={{ fontSize: '11px', color: glass.colors.blue, marginTop: '2px' }}>WINNER ⭐</div>}
+            {awayWon && <div style={{ fontSize: '11px', color: glass.colors.blue, marginTop: '2px', fontWeight: '700' }}>WINNER ⭐</div>}
           </div>
         </div>
 
         {/* Possession bar */}
         {isFinished && (
           <div style={{ marginTop: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: glass.colors.muted, marginBottom: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: glass.colors.muted, marginBottom: '6px', fontWeight: '500' }}>
               <span>{homePossession}%</span>
               <span>Possession</span>
               <span>{awayPossession}%</span>
             </div>
-            <div style={{ height: '6px', borderRadius: '3px', overflow: 'hidden', display: 'flex', background: 'rgba(255,255,255,0.05)' }}>
+            <div style={{ height: '6px', borderRadius: '3px', overflow: 'hidden', display: 'flex', background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)' }}>
               <div style={{ width: `${homePossession}%`, background: 'linear-gradient(90deg, #3b82f6, #2563eb)', transition: 'width 1s ease' }} />
               <div style={{ width: `${awayPossession}%`, background: 'linear-gradient(90deg, #ef4444, #dc2626)', transition: 'width 1s ease' }} />
             </div>
@@ -166,17 +188,18 @@ export default function MatchDetail() {
       {activeTab === 'overview' && (
         <div>
           {/* Animated Stats Chart */}
-{isFinished && (
-  <MatchStatsChart
-    homeTeam={home.shortName || home.name}
-    awayTeam={away.shortName || away.name}
-    homeScore={score.home}
-    awayScore={score.away}
-  />
-)}
+          {isFinished && (
+            <MatchStatsChart
+              homeTeam={home.shortName || home.name}
+              awayTeam={away.shortName || away.name}
+              homeScore={score.home}
+              awayScore={score.away}
+            />
+          )}
+          
           {isFinished && (
             <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
-              <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>
+              <div style={{ padding: '0.75rem 1.5rem', background: headerSectionBg, fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>
                 📊 Match Stats
               </div>
               {[
@@ -195,7 +218,7 @@ export default function MatchDetail() {
 
           {match.goals && match.goals.length > 0 && (
             <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
-              <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>⚽ Goals</div>
+              <div style={{ padding: '0.75rem 1.5rem', background: headerSectionBg, fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>⚽ Goals</div>
               {match.goals.map((goal, i) => (
                 <div key={i} style={{
                   display: 'flex', justifyContent: goal.team.id === home.id ? 'flex-start' : 'flex-end',
@@ -214,7 +237,7 @@ export default function MatchDetail() {
 
           {match.lineups && match.lineups.length === 2 && (
             <div style={{ ...glass.card, overflow: 'hidden' }}>
-              <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>👥 Lineups</div>
+              <div style={{ padding: '0.75rem 1.5rem', background: headerSectionBg, fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>👥 Lineups</div>
               <div style={{ display: 'flex', gap: '1rem', padding: '1rem 1.5rem' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: glass.colors.text }}>{home.shortName || home.name}</div>
@@ -244,73 +267,87 @@ export default function MatchDetail() {
         </div>
       )}
 
-     {/* Lineup tab */}
-     {activeTab === 'ratings' && (
-  <div>
-    {match.lineups && match.lineups.length === 2 ? (
-      <div>
-        {/* Pitch Map */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-          <PitchMap
-            lineup={match.lineups[0].startXI}
-            teamName={home.shortName || home.name}
-            goals={match.goals}
-            isHome={true}
-            ratings={match.lineups[0].startXI?.reduce((acc, p) => {
-              acc[p.player.id] = getPlayerRating(p, true);
-              return acc;
-            }, {})}
-          />
-          <PitchMap
-            lineup={match.lineups[1].startXI}
-            teamName={away.shortName || away.name}
-            goals={match.goals}
-            isHome={false}
-            ratings={match.lineups[1].startXI?.reduce((acc, p) => {
-              acc[p.player.id] = getPlayerRating(p, false);
-              return acc;
-            }, {})}
-          />
-        </div>
-
-        {/* Player ratings list */}
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          {[0, 1].map(teamIndex => {
-            const isHome = teamIndex === 0;
-            const team = isHome ? home : away;
-            return (
-              <div key={teamIndex} style={{ flex: 1 }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '0.75rem', color: glass.colors.text, fontSize: '15px' }}>
-                  <img src={team.crest} alt="" width={20} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                  {team.shortName || team.name}
+      {/* Ratings tab */}
+      {activeTab === 'ratings' && (
+        <div>
+          {match.lineups && match.lineups.length === 2 ? (
+            <div>
+              {/* Pitch Map */}
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexDirection: 'row', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '280px' }}>
+                  <PitchMap
+                    lineup={match.lineups[0].startXI}
+                    teamName={home.shortName || home.name}
+                    goals={match.goals}
+                    isHome={true}
+                    ratings={match.lineups[0].startXI?.reduce((acc, p) => {
+                      acc[p.player.id] = getPlayerRating(p, true);
+                      return acc;
+                    }, {})}
+                  />
                 </div>
-                {match.lineups[teamIndex].startXI?.map((p, i) => {
-                  const rating = getPlayerRating(p, isHome);
+                <div style={{ flex: 1, minWidth: '280px' }}>
+                  <PitchMap
+                    lineup={match.lineups[1].startXI}
+                    teamName={away.shortName || away.name}
+                    goals={match.goals}
+                    isHome={false}
+                    ratings={match.lineups[1].startXI?.reduce((acc, p) => {
+                      acc[p.player.id] = getPlayerRating(p, false);
+                      return acc;
+                    }, {})}
+                  />
+                </div>
+              </div>
+
+              {/* Player ratings list */}
+              <div style={{ display: 'flex', gap: '1rem', flexDirection: 'row', flexWrap: 'wrap' }}>
+                {[0, 1].map(teamIndex => {
+                  const isHome = teamIndex === 0;
+                  const team = isHome ? home : away;
                   return (
-                    <div key={i} onClick={() => navigate(`/player/${p.player.id}`)}
-                      className="hover-glow"
-                      style={{ ...glass.card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', marginBottom: '4px', borderRadius: '8px', cursor: 'pointer' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: glass.colors.muted, fontSize: '12px', width: '16px' }}>{p.player.shirtNumber}</span>
-                        <span style={{ color: glass.colors.text, fontSize: '13px' }}>{p.player.name}</span>
+                    <div key={teamIndex} style={{ flex: 1, minWidth: '280px' }}>
+                      <div style={{ fontWeight: 'bold', marginBottom: '0.75rem', color: glass.colors.text, fontSize: '15px' }}>
+                        <img src={team.crest} alt="" width={20} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                        {team.shortName || team.name}
                       </div>
-                      <RatingBadge rating={rating} size="sm" />
+                      {match.lineups[teamIndex].startXI?.map((p, i) => {
+                        const rating = getPlayerRating(p, isHome);
+                        return (
+                          <div key={i} onClick={() => navigate(`/player/${p.player.id}`)}
+                            className="hover-glow"
+                            style={{ 
+                              ...glass.card, 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between', 
+                              padding: '0.5rem 0.75rem', 
+                              marginBottom: '4px', 
+                              borderRadius: '8px', 
+                              cursor: 'pointer' 
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ color: glass.colors.muted, fontSize: '12px', width: '16px' }}>{p.player.shirtNumber}</span>
+                              <span style={{ color: glass.colors.text, fontSize: '13px' }}>{p.player.name}</span>
+                            </div>
+                            <RatingBadge rating={rating} size="sm" />
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
               </div>
-            );
-          })}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+              <p style={{ color: glass.colors.muted }}>Lineup data not available for this match.</p>
+              <p style={{ color: glass.colors.muted, fontSize: '13px', marginTop: '0.5rem' }}>Ratings are calculated based on match result and goal contributions.</p>
+            </div>
+          )}
         </div>
-      </div>
-    ) : (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <p style={{ color: glass.colors.muted }}>Lineup data not available for this match.</p>
-        <p style={{ color: glass.colors.muted, fontSize: '13px', marginTop: '0.5rem' }}>Ratings are calculated based on match result and goal contributions.</p>
-      </div>
-    )}
-  </div>
-)}
+      )}
 
       {/* H2H tab */}
       {activeTab === 'h2h' && (
@@ -320,17 +357,17 @@ export default function MatchDetail() {
           ) : (
             <div>
               <div style={{ display: 'flex', borderRadius: '12px', border: `1px solid ${glass.colors.border}`, overflow: 'hidden', marginBottom: '1.5rem', textAlign: 'center' }}>
-                <div style={{ flex: 1, padding: '1rem', background: 'rgba(59,130,246,0.15)' }}>
+                <div style={{ flex: 1, padding: '1rem', background: isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.08)' }}>
                   <div style={{ fontSize: '28px', fontWeight: 'bold', color: glass.colors.blue }}>{homeWins}</div>
                   <div style={{ fontSize: '13px', color: glass.colors.blue, fontWeight: '600' }}>{home.shortName || home.name}</div>
                   <div style={{ fontSize: '12px', color: glass.colors.muted }}>Wins</div>
                 </div>
-                <div style={{ flex: 1, padding: '1rem', background: 'rgba(0,0,0,0.2)' }}>
+                <div style={{ flex: 1, padding: '1rem', background: headerSectionBg }}>
                   <div style={{ fontSize: '28px', fontWeight: 'bold', color: glass.colors.text }}>{draws}</div>
                   <div style={{ fontSize: '13px', color: glass.colors.text, fontWeight: '600' }}>Draws</div>
                   <div style={{ fontSize: '12px', color: glass.colors.muted }}>out of {h2hMatches.length}</div>
                 </div>
-                <div style={{ flex: 1, padding: '1rem', background: 'rgba(239,68,68,0.15)' }}>
+                <div style={{ flex: 1, padding: '1rem', background: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)' }}>
                   <div style={{ fontSize: '28px', fontWeight: 'bold', color: glass.colors.red }}>{awayWins}</div>
                   <div style={{ fontSize: '13px', color: glass.colors.red, fontWeight: '600' }}>{away.shortName || away.name}</div>
                   <div style={{ fontSize: '12px', color: glass.colors.muted }}>Wins</div>
@@ -342,8 +379,8 @@ export default function MatchDetail() {
                 const isHomeTeamHome = m.homeTeam.id === home.id;
                 const homeScore = m.score.fullTime.home;
                 const awayScore = m.score.fullTime.away;
-                const homeWon = isHomeTeamHome ? homeScore > awayScore : awayScore > homeScore;
-                const awayWon = isHomeTeamHome ? awayScore > homeScore : homeScore > awayScore;
+                const recentHomeWon = isHomeTeamHome ? homeScore > awayScore : awayScore > homeScore;
+                const recentAwayWon = isHomeTeamHome ? awayScore > homeScore : homeScore > awayScore;
                 return (
                   <div key={m.id} onClick={() => navigate(`/match/${m.id}`)}
                     className="hover-glow"
@@ -352,12 +389,12 @@ export default function MatchDetail() {
                       {new Date(m.utcDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', width: '40%' }}>
-                      <span style={{ fontWeight: homeWon ? 'bold' : 'normal', color: glass.colors.text }}>
+                      <span style={{ fontWeight: recentHomeWon ? 'bold' : 'normal', color: glass.colors.text }}>
                         <img src={m.homeTeam.crest} alt="" width={18} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
                         {m.homeTeam.shortName || m.homeTeam.name}
                       </span>
                       <span style={{ fontWeight: 'bold', fontSize: '15px', color: glass.colors.text }}>{homeScore} - {awayScore}</span>
-                      <span style={{ fontWeight: awayWon ? 'bold' : 'normal', color: glass.colors.text }}>
+                      <span style={{ fontWeight: recentAwayWon ? 'bold' : 'normal', color: glass.colors.text }}>
                         {m.awayTeam.shortName || m.awayTeam.name}
                         <img src={m.awayTeam.crest} alt="" width={18} style={{ verticalAlign: 'middle', marginLeft: '4px' }} />
                       </span>
@@ -375,7 +412,7 @@ export default function MatchDetail() {
       {activeTab === 'summary' && (
         <div>
           <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '0.75rem 1.5rem', background: headerSectionBg, fontWeight: 'bold', fontSize: '14px', color: glass.colors.text, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>📝 Match Summary</span>
               {isFinished && (
                 <button onClick={() => { navigator.clipboard.writeText(generateMatchSummary(match)); alert('Copied!'); }}
@@ -390,7 +427,7 @@ export default function MatchDetail() {
                   <p style={{ color: glass.colors.text, fontSize: '15px', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
                     {generateMatchSummary(match)}
                   </p>
-                  <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: `1px solid ${glass.colors.border}` }}>
+                  <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '8px', background: headerSectionBg, border: `1px solid ${glass.colors.border}` }}>
                     <p style={{ color: glass.colors.muted, fontSize: '12px', marginBottom: '0.5rem', fontWeight: '600' }}>📱 SHORT VERSION</p>
                     <p style={{ color: glass.colors.text, fontSize: '14px' }}>{generateShortSummary(match)}</p>
                     <button onClick={() => { navigator.clipboard.writeText(generateShortSummary(match)); alert('Copied!'); }}
@@ -406,7 +443,7 @@ export default function MatchDetail() {
               )}
             </div>
           </div>
-          <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.08)', fontSize: '13px', color: '#fbbf24' }}>
+          <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.08)', fontSize: '13px', color: isDark ? '#fbbf24' : '#d97706' }}>
             💡 <strong>Coming soon:</strong> AI-powered summaries with Claude for deeper tactical analysis.
           </div>
         </div>

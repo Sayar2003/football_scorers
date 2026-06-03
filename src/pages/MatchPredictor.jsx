@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { glass, leagueButtonStyle } from '../styles/glass';
+import { useTheme } from '../context/ThemeContext';
+import { getGlass, leagueButtonStyle } from '../styles/glass';
 
 const api = axios.create({
   baseURL: '/v4',
@@ -8,7 +9,7 @@ const api = axios.create({
 });
 
 const LEAGUES = {
-  PL:  { name: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  PL:  { name: 'Premier League', flag: '🏴\u200d🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
   PD:  { name: 'La Liga',         flag: '🇪🇸' },
   BL1: { name: 'Bundesliga',     flag: '🇩🇪' },
   SA:  { name: 'Serie A',        flag: '🇮🇹' },
@@ -91,14 +92,28 @@ export default function MatchPredictor() {
   const [loading, setLoading] = useState(false);
   const [loadingStandings, setLoadingStandings] = useState(true);
   const [error, setError] = useState(null);
+  const { isDark } = useTheme();
+  const glass = getGlass(isDark);
 
   useEffect(() => {
+    let isMounted = true;
     setLoadingStandings(true);
     setPrediction(null);
-    setHomeTeam(''); setAwayTeam('');
+    setHomeTeam(''); 
+    setAwayTeam('');
+    
     api.get(`/competitions/${selectedLeague}/standings`)
-      .then(res => { setStandings(res.data.standings[0].table); setLoadingStandings(false); })
-      .catch(() => setLoadingStandings(false));
+      .then(res => { 
+        if (isMounted) {
+          setStandings(res.data.standings[0].table); 
+          setLoadingStandings(false); 
+        }
+      })
+      .catch(() => {
+        if (isMounted) setLoadingStandings(false);
+      });
+
+    return () => { isMounted = false; };
   }, [selectedLeague]);
 
   const handlePredict = async () => {
@@ -131,25 +146,36 @@ export default function MatchPredictor() {
   const selectStyle = {
     width: '100%', padding: '0.75rem', borderRadius: '8px',
     border: `1px solid ${glass.colors.border}`,
-    background: 'rgba(255,255,255,0.04)', color: glass.colors.text,
+    background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', 
+    color: glass.colors.text,
     fontSize: '14px', cursor: 'pointer', outline: 'none',
     backdropFilter: 'blur(10px)',
-    WebkitAppearance: 'none', /* Removes native OS styles on Safari/Chrome */
+    WebkitAppearance: 'none',
     MozAppearance: 'none'
   };
 
-  // Explicit styling specifically targeting the expanded overlay list options
   const optionStyle = {
-    background: '#151c2c', // Solid dark color matching your UI theme
-    color: glass.colors.text || '#ffffff',
+    background: isDark ? '#151c2c' : '#ffffff',
+    color: glass.colors.text,
     padding: '10px'
+  };
+
+  const sectionHeaderStyle = {
+    padding: '0.75rem 1.5rem', 
+    background: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.04)', 
+    fontWeight: '700', 
+    fontSize: '14px', 
+    color: glass.colors.text,
+    letterSpacing: '0.5px'
   };
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }} className="fade-in">
       <h1 style={{
         fontSize: '24px', fontWeight: '700', marginBottom: '0.5rem',
-        background: 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.7))',
+        background: isDark 
+          ? 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.7))' 
+          : `linear-gradient(135deg, ${glass.colors.text}, ${glass.colors.muted})`,
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'
       }}>🔮 Match Predictor</h1>
       <p style={{ color: glass.colors.muted, fontSize: '14px', marginBottom: '1.5rem' }}>
@@ -170,7 +196,7 @@ export default function MatchPredictor() {
         <div style={{ ...glass.card, padding: '1.5rem', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '200px' }}>
-              <label style={{ color: glass.colors.muted, fontSize: '13px', display: 'block', marginBottom: '6px' }}>🏠 Home Team</label>
+              <label style={{ color: glass.colors.muted, fontSize: '13px', display: 'block', marginBottom: '6px', fontWeight: '500' }}>🏠 Home Team</label>
               <select value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)} style={selectStyle}>
                 <option value="" style={optionStyle}>Select home team...</option>
                 {standings.map(s => (
@@ -182,7 +208,7 @@ export default function MatchPredictor() {
             </div>
             <div style={{ color: glass.colors.muted, fontSize: '20px', fontWeight: 'bold', paddingBottom: '8px' }}>VS</div>
             <div style={{ flex: 1, minWidth: '200px' }}>
-              <label style={{ color: glass.colors.muted, fontSize: '13px', display: 'block', marginBottom: '6px' }}>✈️ Away Team</label>
+              <label style={{ color: glass.colors.muted, fontSize: '13px', display: 'block', marginBottom: '6px', fontWeight: '500' }}>✈️ Away Team</label>
               <select value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)} style={selectStyle}>
                 <option value="" style={optionStyle}>Select away team...</option>
                 {standings.map(s => (
@@ -200,18 +226,18 @@ export default function MatchPredictor() {
         </div>
       )}
 
-      {error && <p style={{ color: glass.colors.red, marginBottom: '1rem' }}>{error}</p>}
+      {error && <p style={{ color: glass.colors.red, marginBottom: '1rem', fontWeight: '500' }}>{error}</p>}
 
       {selectedHome && selectedAway && !prediction && (
         <div style={{ ...glass.card, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
           <div>
-            <img src={selectedHome.team.crest} alt="" width={50} style={{ marginBottom: '8px' }} />
+            <img src={selectedHome.team.crest} alt="" width={50} height={50} style={{ marginBottom: '8px', objectFit: 'contain' }} />
             <div style={{ color: glass.colors.text, fontWeight: '600' }}>{selectedHome.team.name}</div>
             <div style={{ color: glass.colors.muted, fontSize: '13px' }}>#{selectedHome.position} · {selectedHome.points} pts</div>
           </div>
           <div style={{ color: glass.colors.muted, fontSize: '24px', fontWeight: 'bold' }}>VS</div>
           <div>
-            <img src={selectedAway.team.crest} alt="" width={50} style={{ marginBottom: '8px' }} />
+            <img src={selectedAway.team.crest} alt="" width={50} height={50} style={{ marginBottom: '8px', objectFit: 'contain' }} />
             <div style={{ color: glass.colors.text, fontWeight: '600' }}>{selectedAway.team.name}</div>
             <div style={{ color: glass.colors.muted, fontSize: '13px' }}>#{selectedAway.position} · {selectedAway.points} pts</div>
           </div>
@@ -223,38 +249,40 @@ export default function MatchPredictor() {
           {/* Match header */}
           <div style={{ ...glass.cardStrong, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
             <div style={{ flex: 1 }}>
-              <img src={selectedHome.team.crest} alt="" width={60} style={{ marginBottom: '8px' }} />
+              <img src={selectedHome.team.crest} alt="" width={60} height={60} style={{ marginBottom: '8px', objectFit: 'contain' }} />
               <div style={{ color: prediction.favourite === 'home' ? glass.colors.blue : glass.colors.text, fontWeight: 'bold', fontSize: '18px' }}>{selectedHome.team.name}</div>
-              {prediction.favourite === 'home' && <div style={{ color: glass.colors.blue, fontSize: '12px', marginTop: '4px' }}>FAVOURITE ⭐</div>}
+              {prediction.favourite === 'home' && <div style={{ color: glass.colors.blue, fontSize: '12px', marginTop: '4px', fontWeight: '700' }}>FAVOURITE ⭐</div>}
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{
                 fontSize: '36px', fontWeight: '900',
-                background: 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.8))',
+                background: isDark
+                  ? 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.8))'
+                  : `linear-gradient(135deg, ${glass.colors.text}, ${glass.colors.muted})`,
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'
               }}>{prediction.predictedScore}</div>
-              <div style={{ color: glass.colors.muted, fontSize: '13px', marginTop: '4px' }}>Predicted Score</div>
+              <div style={{ color: glass.colors.muted, fontSize: '13px', marginTop: '4px', fontWeight: '500' }}>Predicted Score</div>
               <div style={{ marginTop: '8px', padding: '4px 12px', borderRadius: '20px', background: `${getConfidenceColor(prediction.confidence)}22`, color: getConfidenceColor(prediction.confidence), fontSize: '12px', fontWeight: '600', display: 'inline-block' }}>
                 {prediction.confidence} Confidence
               </div>
             </div>
             <div style={{ flex: 1 }}>
-              <img src={selectedAway.team.crest} alt="" width={60} style={{ marginBottom: '8px' }} />
+              <img src={selectedAway.team.crest} alt="" width={60} height={60} style={{ marginBottom: '8px', objectFit: 'contain' }} />
               <div style={{ color: prediction.favourite === 'away' ? glass.colors.blue : glass.colors.text, fontWeight: 'bold', fontSize: '18px' }}>{selectedAway.team.name}</div>
-              {prediction.favourite === 'away' && <div style={{ color: glass.colors.blue, fontSize: '12px', marginTop: '4px' }}>FAVOURITE ⭐</div>}
+              {prediction.favourite === 'away' && <div style={{ color: glass.colors.blue, fontSize: '12px', marginTop: '4px', fontWeight: '700' }}>FAVOURITE ⭐</div>}
             </div>
           </div>
 
           {/* Win probabilities */}
           <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>📊 Win Probabilities</div>
+            <div style={sectionHeaderStyle}>📊 Win Probabilities</div>
             <div style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', height: '40px', borderRadius: '8px', overflow: 'hidden', marginBottom: '1rem' }}>
                 <div style={{ width: `${prediction.homeWinProb}%`, background: 'linear-gradient(90deg, #3b82f6, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '14px' }}>{prediction.homeWinProb}%</div>
                 <div style={{ width: `${prediction.drawProb}%`, background: 'rgba(107,114,128,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '14px' }}>{prediction.drawProb}%</div>
                 <div style={{ width: `${prediction.awayWinProb}%`, background: 'linear-gradient(90deg, #ef4444, #dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '14px' }}>{prediction.awayWinProb}%</div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '500' }}>
                 <div style={{ color: glass.colors.blue }}>🏠 {selectedHome.team.shortName || selectedHome.team.name}</div>
                 <div style={{ color: glass.colors.muted }}>Draw</div>
                 <div style={{ color: glass.colors.red }}>{selectedAway.team.shortName || selectedAway.team.name} ✈️</div>
@@ -264,15 +292,15 @@ export default function MatchPredictor() {
 
           {/* Key factors */}
           <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>🔍 Key Factors</div>
+            <div style={sectionHeaderStyle}>🔍 Key Factors</div>
             {prediction.analysis.map((line, i) => (
-              <div key={i} style={{ padding: '0.75rem 1.5rem', borderTop: `1px solid ${glass.colors.border}`, fontSize: '14px', color: glass.colors.text }}>{line}</div>
+              <div key={i} style={{ padding: '0.75rem 1.5rem', borderTop: `1px solid ${glass.colors.border}`, fontSize: '14px', color: glass.colors.text, fontWeight: '500' }}>{line}</div>
             ))}
           </div>
 
           {/* Stats comparison */}
           <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
-            <div style={{ padding: '0.75rem 1.5rem', background: 'rgba(0,0,0,0.3)', fontWeight: 'bold', fontSize: '14px', color: glass.colors.text }}>📈 Season Stats</div>
+            <div style={sectionHeaderStyle}>📈 Season Stats</div>
             {[
               { label: 'Position', home: `#${selectedHome.position}`, away: `#${selectedAway.position}` },
               { label: 'Points', home: selectedHome.points, away: selectedAway.points },
@@ -283,7 +311,7 @@ export default function MatchPredictor() {
             ].map((stat, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 1.5rem', borderTop: `1px solid ${glass.colors.border}` }}>
                 <div style={{ flex: 1, textAlign: 'left', fontWeight: '600', color: stat.home > stat.away ? glass.colors.blue : glass.colors.text, fontSize: '14px' }}>{stat.home}</div>
-                <div style={{ flex: 1, textAlign: 'center', color: glass.colors.muted, fontSize: '13px' }}>{stat.label}</div>
+                <div style={{ flex: 1, textAlign: 'center', color: glass.colors.muted, fontSize: '13px', fontWeight: '500' }}>{stat.label}</div>
                 <div style={{ flex: 1, textAlign: 'right', fontWeight: '600', color: stat.away > stat.home ? glass.colors.blue : glass.colors.text, fontSize: '14px' }}>{stat.away}</div>
               </div>
             ))}

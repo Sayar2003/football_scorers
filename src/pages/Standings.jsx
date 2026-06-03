@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStandings, LEAGUES } from '../services/footballAPI';
-import { glass, leagueButtonStyle } from '../styles/glass';
+import { getGlass, leagueButtonStyle } from '../styles/glass';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Standings() {
   const [selectedLeague, setSelectedLeague] = useState('PL');
@@ -9,10 +10,11 @@ export default function Standings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { isDark } = useTheme();
+  const glass = getGlass(isDark);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     getStandings(selectedLeague)
       .then(res => { setStandings(res.data.standings[0].table); setLoading(false); })
       .catch(() => { setError('Failed to load standings.'); setLoading(false); });
@@ -22,29 +24,24 @@ export default function Standings() {
     if (result === 'W') return { backgroundColor: '#16a34a', color: 'white' };
     if (result === 'L') return { backgroundColor: '#dc2626', color: 'white' };
     if (result === 'D') return { backgroundColor: '#d97706', color: 'white' };
-    return { backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' };
+    return { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', color: glass.colors.muted };
   };
 
-  const parseForm = (form) => {
-    if (!form) return [];
-    return form.split(',').slice(-5);
-  };
+  const parseForm = (form) => form ? form.split(',').slice(-5) : [];
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }} className="fade-in">
       <h1 style={{
         fontSize: '24px', fontWeight: '700', marginBottom: '1.5rem',
-        background: 'linear-gradient(135deg, #ffffff, rgba(255,255,255,0.7))',
-        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'
+        color: glass.colors.text
       }}>
         📊 Standings
       </h1>
 
-      {/* League selector */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         {Object.entries(LEAGUES).map(([code, league]) => (
           <button key={code} onClick={() => setSelectedLeague(code)}
-            style={leagueButtonStyle(selectedLeague === code)}>
+            style={leagueButtonStyle(selectedLeague === code, isDark)}>
             {league.flag} {league.name}
           </button>
         ))}
@@ -65,9 +62,10 @@ export default function Standings() {
                 {['#', 'Team', 'P', 'W', 'D', 'L', 'GD', 'Pts', 'Form'].map(h => (
                   <th key={h} style={{
                     padding: '12px', fontSize: '11px', fontWeight: '600',
-                    color: glass.colors.muted, textAlign: h === 'Team' ? 'left' : 'center',
+                    color: glass.colors.muted,
+                    textAlign: h === 'Team' ? 'left' : 'center',
                     textTransform: 'uppercase', letterSpacing: '0.5px',
-                    background: 'rgba(0,0,0,0.2)'
+                    background: glass.colors.tableHeader
                   }}>{h}</th>
                 ))}
               </tr>
@@ -78,13 +76,14 @@ export default function Standings() {
                 return (
                   <tr key={row.team.id} className="hover-glow" style={{
                     borderBottom: `1px solid ${glass.colors.border}`,
-                    transition: 'background 0.2s',
-                    cursor: 'default'
+                    background: index % 2 === 0 ? 'transparent' : glass.colors.rowAlt,
+                    transition: 'background 0.2s'
                   }}>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        width: '26px', height: '26px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
+                        width: '26px', height: '26px', borderRadius: '8px',
+                        fontSize: '12px', fontWeight: 'bold',
                         background: row.position <= 4 ? 'rgba(59,130,246,0.2)' :
                           row.position === 5 ? 'rgba(245,158,11,0.2)' :
                           row.position >= 18 ? 'rgba(239,68,68,0.2)' : 'transparent',
@@ -115,9 +114,9 @@ export default function Standings() {
                       <div style={{ display: 'flex', gap: '3px', justifyContent: 'center' }}>
                         {form.length > 0 ? form.map((result, i) => (
                           <span key={i} style={{
-                            ...getFormColor(result),
-                            width: '20px', height: '20px', borderRadius: '4px',
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            ...getFormColor(result), width: '20px', height: '20px',
+                            borderRadius: '4px', display: 'inline-flex',
+                            alignItems: 'center', justifyContent: 'center',
                             fontSize: '11px', fontWeight: 'bold'
                           }}>{result}</span>
                         )) : <span style={{ color: glass.colors.muted, fontSize: '12px' }}>N/A</span>}
@@ -131,7 +130,6 @@ export default function Standings() {
         </div>
       )}
 
-      {/* Legend */}
       {!loading && !error && (
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', fontSize: '12px', color: glass.colors.muted, flexWrap: 'wrap' }}>
           <span><span style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa', padding: '1px 6px', borderRadius: '4px' }}>Top 4</span> Champions League</span>

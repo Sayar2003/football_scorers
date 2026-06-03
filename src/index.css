@@ -18,6 +18,24 @@ body[data-theme='light'] {
   color: #0f1117;
 }
 
+body[data-theme='light'] .glass-card {
+  background: rgba(255,255,255,0.8) !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+body[data-theme='light'] table {
+  color: #0f1117;
+}
+
+body[data-theme='light'] input {
+  color: #0f1117;
+}
+
+body[data-theme='light'] select {
+  color: #0f1117;
+  background: rgba(0,0,0,0.04);
+}
+
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.4); border-radius: 2px; }
