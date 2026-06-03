@@ -10,12 +10,12 @@ export default function TopBar({ onMenuClick }) {
   const { user, logout } = useAuth();
   const { isDark } = useTheme();
 
-  const handleSearch = (e) => {
-    if (e.key === 'Enter' && search.trim()) {
-      navigate(`/search?q=${encodeURIComponent(search)}`);
-      setSearch('');
-    }
-  };
+const handleSearch = (e) => {
+  if (e.key === 'Enter' && search.trim()) {
+    navigate(`/search?q=${encodeURIComponent(search)}`);
+    setSearch('');
+  }
+};
 
   return (
     <div style={{
@@ -44,38 +44,57 @@ export default function TopBar({ onMenuClick }) {
         ☰
       </button>
 
-      {/* Search bar — center */}
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ position: 'relative', width: '100%', maxWidth: '500px' }}>
-          <span style={{
-            position: 'absolute', left: '14px', top: '50%',
-            transform: 'translateY(-50%)', fontSize: '16px', opacity: 0.5
-          }}>🔍</span>
-          <input
-            type="text" value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={handleSearch}
-            placeholder="Search teams, players..."
-            style={{
-              width: '100%', padding: '0.6rem 1rem 0.6rem 2.8rem',
-              borderRadius: '12px', fontSize: '14px',
-              fontFamily: 'inherit', outline: 'none',
-              background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
-              border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-              color: isDark ? '#ffffff' : '#0f1117',
-              transition: 'all 0.2s',
-            }}
-            onFocus={e => {
-              e.target.style.border = '1px solid rgba(59,130,246,0.5)';
-              e.target.style.boxShadow = '0 0 15px rgba(59,130,246,0.15)';
-            }}
-            onBlur={e => {
-              e.target.style.border = isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)';
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-        </div>
-      </div>
+{/* Search bar — center */}
+<div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+  <div style={{ position: 'relative', width: '100%', maxWidth: '500px', display: 'flex', gap: '0.5rem' }}>
+    <span style={{
+      position: 'absolute', left: '14px', top: '50%',
+      transform: 'translateY(-50%)', fontSize: '16px', opacity: 0.5, zIndex: 1
+    }}>🔍</span>
+    <input
+      type="text" value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      onKeyDown={handleSearch}
+      placeholder="Search teams, players..."
+      style={{
+        flex: 1, padding: '0.6rem 1rem 0.6rem 2.8rem',
+        borderRadius: '12px', fontSize: '14px',
+        fontFamily: 'inherit', outline: 'none',
+        background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+        color: isDark ? '#ffffff' : '#0f1117',
+        transition: 'all 0.2s',
+      }}
+      onFocus={e => {
+        e.target.style.border = '1px solid rgba(59,130,246,0.5)';
+        e.target.style.boxShadow = '0 0 15px rgba(59,130,246,0.15)';
+      }}
+      onBlur={e => {
+        e.target.style.border = isDark
+          ? '1px solid rgba(255,255,255,0.1)'
+          : '1px solid rgba(0,0,0,0.1)';
+        e.target.style.boxShadow = 'none';
+      }}
+    />
+    <button
+      onClick={() => {
+        if (search.trim()) {
+          navigate(`/search?q=${encodeURIComponent(search)}`);
+          setSearch('');
+        }
+      }}
+      style={{
+        padding: '0.6rem 1rem', borderRadius: '10px',
+        background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+        border: 'none', color: 'white', cursor: 'pointer',
+        fontSize: '14px', fontWeight: '500', fontFamily: 'inherit',
+        transition: 'all 0.2s', flexShrink: 0
+      }}
+    >
+      Search
+    </button>
+  </div>
+</div>
 
       {/* User icon — right */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
