@@ -114,13 +114,35 @@ export default function TopScorers() {
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'
       }}>🥇 Top Scorers</h1>
 
+      {/* Fixed Contrast League Navigation row */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {Object.entries(LEAGUES).map(([code, league]) => (
-          <button key={code} onClick={() => setSelectedLeague(code)}
-            style={leagueButtonStyle(selectedLeague === code)}>
-            {league.flag} {league.name}
-          </button>
-        ))}
+        {Object.entries(LEAGUES).map(([code, league]) => {
+          const isActive = selectedLeague === code;
+          return (
+            <button 
+              key={code} 
+              onClick={() => setSelectedLeague(code)}
+              style={{
+                ...leagueButtonStyle(isActive),
+                fontWeight: isActive ? '600' : '500',
+                fontSize: '13px',
+                padding: '0.4rem 0.9rem',
+                borderRadius: '20px',
+                cursor: 'pointer',
+                color: isActive 
+                  ? '#3b82f6' 
+                  : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.65)'),
+                backgroundColor: isActive 
+                  ? 'rgba(59,130,246,0.15)' 
+                  : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'),
+                borderColor: isActive ? 'rgba(59,130,246,0.4)' : glass.colors.border,
+                transition: 'all 0.2s ease-in-out'
+              }}
+            >
+              {league.flag} {league.name}
+            </button>
+          );
+        })}
       </div>
 
       {loading && (
