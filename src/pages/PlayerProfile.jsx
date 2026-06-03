@@ -192,11 +192,13 @@ export default function PlayerProfile() {
             <StatBox label="Penalties" value={seasonStats?.penalties} color="#fbbf24" glass={glass} />
           </div>
 
-          {/* Radar Chart */}
+          {/* Fixed Radar Chart Component - Passing theme down */}
           <PlayerRadarChart
             seasonStats={seasonStats}
             position={player.position}
             playerName={player.name}
+            isDark={isDark}
+            glass={glass}
           />
 
           <div style={{ ...glass.card, overflow: 'hidden', marginBottom: '1.5rem' }}>
