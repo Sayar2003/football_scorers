@@ -21,8 +21,10 @@ const toBase64 = (url) => {
   });
 };
 
+import { API_BASE_URL } from '../config/apiConfig';
+
 const api = axios.create({
-  baseURL: '/v4',
+  baseURL: API_BASE_URL,
   headers: { 'X-Auth-Token': process.env.REACT_APP_FOOTBALL_API_KEY }
 });
 

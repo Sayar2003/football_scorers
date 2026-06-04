@@ -1,10 +1,10 @@
 import axios from 'axios';
 
+import { API_BASE_URL } from '../config/apiConfig';
+
 const api = axios.create({
-  baseURL: '/v4',
-  headers: {
-    'X-Auth-Token': process.env.REACT_APP_FOOTBALL_API_KEY
-  }
+  baseURL: API_BASE_URL,
+  headers: { 'X-Auth-Token': process.env.REACT_APP_FOOTBALL_API_KEY }
 });
 
 export const LEAGUES = {
