@@ -82,3 +82,20 @@ button { font-family: inherit; }
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(1.2); }
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  /* Hide less important table columns on mobile */
+  .hide-mobile { display: none !important; }
+
+  /* Stack flex items on mobile */
+  .stack-mobile {
+    flex-direction: column !important;
+  }
+
+  /* Full width on mobile */
+  .full-mobile {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+}

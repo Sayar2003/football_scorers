@@ -198,7 +198,16 @@ export default function Matches() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '35%' }}>
                   <img src={match.homeTeam.crest} alt="" width={28} height={28} style={{ objectFit: 'contain' }} />
-                  <span style={{ fontWeight: '600', color: glass.colors.text, fontSize: '14px' }}>
+                  {/* Applied layout fix from image_5be7c0.png */}
+                  <span style={{ 
+                    fontWeight: '500', 
+                    color: glass.colors.text, 
+                    fontSize: '14px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '120px'
+                  }}>
                     {match.homeTeam.shortName || match.homeTeam.name}
                   </span>
                 </div>
@@ -226,7 +235,16 @@ export default function Matches() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '35%', justifyContent: 'flex-end' }}>
-                  <span style={{ fontWeight: '600', color: glass.colors.text, fontSize: '14px' }}>
+                  {/* Applied layout fix from image_5be79e.png */}
+                  <span style={{ 
+                    fontWeight: '500', 
+                    color: glass.colors.text, 
+                    fontSize: '14px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '120px'
+                  }}>
                     {match.awayTeam.shortName || match.awayTeam.name}
                   </span>
                   <img src={match.awayTeam.crest} alt="" width={28} height={28} style={{ objectFit: 'contain' }} />
