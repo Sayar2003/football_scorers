@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { getGlass, leagueButtonStyle } from '../styles/glass';
+import { getGlass } from '../styles/glass';
 
 const CATEGORIES = [
   { id: 'all', label: '📰 All News' },
@@ -86,16 +86,31 @@ export default function News() {
     setError(null);
 
     const query = categoryQueries[category] || `football ${category}`;
-const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=20&token=${process.env.REACT_APP_GNEWS_API_KEY}`;    
+    
+    // Dynamically retrieve your backend deployment path from environment setup
+    const backendUrl = process.env.REACT_APP_BACKEND_URL;
+    const url = `${backendUrl}/api/news?category=${encodeURIComponent(query)}`;    
+    
     fetch(url)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`Backend error response status code: ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         if (!isMounted) return;
         if (data.status === 'error') throw new Error(data.message);
         
-        // Clean array filtration guard
-        const validArticles = (data.articles || []).filter(a => a && a.title && a.urlToImage && a.title !== '[Removed]');
-        setArticles(validArticles);
+        // Ensure a fall-through empty array layout check
+        const validArticles = (data.articles || []).filter(a => a && a.title && a.title !== '[Removed]');
+        
+        // Maps properties cleanly so your image and source nodes work out of the box
+        const mappedArticles = validArticles.map(a => ({
+          ...a,
+          urlToImage: a.urlToImage || a.image, 
+          source: { name: a.source?.name || 'News' }
+        }));
+
+        setArticles(mappedArticles);
         setLoading(false);
       })
       .catch(err => { 
@@ -173,7 +188,7 @@ const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=
           <p style={{ fontSize: '32px', marginBottom: '1rem' }}>❌</p>
           <p style={{ color: glass.colors.red, fontWeight: '600' }}>{error}</p>
           <p style={{ color: glass.colors.muted, fontSize: '13px', marginTop: '0.5rem' }}>
-            Note: The NewsAPI developer tier requires requests made from local hosting context environments.
+            The app is now making requests through your proxy backend service. If errors persist, verify your Render Environment configurations are running.
           </p>
         </div>
       )}
