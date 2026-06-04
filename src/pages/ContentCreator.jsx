@@ -3,6 +3,7 @@ import axios from 'axios';
 import html2canvas from 'html2canvas';
 import { useTheme } from '../context/ThemeContext';
 import { getGlass } from '../styles/glass';
+import { API_BASE_URL } from '../config/apiConfig';
 
 const toBase64 = (url) => {
   return new Promise((resolve) => {
@@ -21,7 +22,7 @@ const toBase64 = (url) => {
   });
 };
 
-import { API_BASE_URL } from '../config/apiConfig';
+
 
 const api = axios.create({
   baseURL: API_BASE_URL,
