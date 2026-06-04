@@ -7,6 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- Chat Endpoint ---
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
   try {
@@ -24,6 +25,7 @@ app.post('/api/chat', async (req, res) => {
         })
       }
     );
+
     const data = await response.json();
     if (data.error) return res.status(500).json({ error: data.error });
     res.json({ response: data[0]?.generated_text || 'No response generated.' });
@@ -33,5 +35,27 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-const PORT = 5000;
-app.listen(PORT, () => console.log(`AI server running on port ${PORT}`));
+// --- Secure News Proxy Endpoint ---
+// This handles requests on your phone and live Vercel deployments!
+app.get('/v4/api/news', async (req, res) => {
+  const category = req.query.category || 'football';
+  try {
+    const newsResponse = await fetch(
+      `https://newsapi.org/v2/everything?q=${encodeURIComponent(category)}&apiKey=${process.env.REACT_APP_NEWS_API_KEY}`,
+      { method: 'GET' }
+    );
+    
+    const data = await newsResponse.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Backend News Proxy Error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch news via backend proxy.' });
+  }
+});
+
+// --- Dynamic Server Port Configuration ---
+// Render automatically provides a dynamic port, but it will default to 5000 locally
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`AI server running on port ${PORT}`);
+});

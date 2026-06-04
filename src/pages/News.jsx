@@ -86,8 +86,7 @@ export default function News() {
     setError(null);
 
     const query = categoryQueries[category] || `football ${category}`;
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=20&apiKey=${process.env.REACT_APP_NEWS_API_KEY}`;
-    
+const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=20&token=${process.env.REACT_APP_GNEWS_API_KEY}`;    
     fetch(url)
       .then(res => res.json())
       .then(data => {
