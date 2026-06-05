@@ -95,17 +95,16 @@ useEffect(() => {
   };
 
   const query = categoryQueries[category] || `football ${category}`;
-
-  // NewsAPI direct call — does not go through backend
-  const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=20&token=${process.env.REACT_APP_GNEWS_API_KEY}`;
+  const backendUrl = process.env.REACT_APP_BACKEND_URL?.replace('/v4', '') || 'http://localhost:5000';
+  const url = `${backendUrl}/api/news?q=${encodeURIComponent(query)}`;
 
   fetch(url)
     .then(res => res.json())
     .then(data => {
-  if (!data.articles) throw new Error('No articles found');
-  setArticles(data.articles.filter(a => a.title && a.image));
-  setLoading(false);
-})
+      if (!data.articles) throw new Error('No articles found');
+      setArticles(data.articles.filter(a => a.title && a.image));
+      setLoading(false);
+    })
     .catch(err => {
       setError('Failed to load news. ' + err.message);
       setLoading(false);
