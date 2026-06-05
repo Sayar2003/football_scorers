@@ -38,11 +38,16 @@ function ArticleCard({ article, featured, formatDate, glass }) {
         display: 'flex', 
         flexDirection: 'column'
       }}>
-        {article.image && (
-  <img src={article.image} alt={article.title}
-    style={{ width: '100%', height: featured ? '300px' : '160px', objectFit: 'cover' }}
-    onError={(e) => { e.target.style.display = 'none'; }} />
-)}
+        {/* FIX: Handled both urlToImage and image fallback conditions cleanly */}
+        {(article.urlToImage || article.image) && (
+          <img 
+            src={article.urlToImage || article.image} 
+            alt={article.title}
+            style={{ width: '100%', height: featured ? '300px' : '160px', objectFit: 'cover' }}
+            onError={(e) => { e.target.style.display = 'none'; }} 
+          />
+        )}
+        
         <div style={{ padding: featured ? '1.5rem' : '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
             {featured && (
@@ -100,15 +105,36 @@ useEffect(() => {
 
   fetch(url)
     .then(res => res.json())
-    .then(data => {
-      if (!data.articles) throw new Error('No articles found');
-      setArticles(data.articles.filter(a => a.title && a.image));
-      setLoading(false);
-    })
-    .catch(err => {
-      setError('Failed to load news. ' + err.message);
-      setLoading(false);
-    });
+.then(data => {
+  console.log('News API response:', data);
+  
+  // Handle different response formats
+  let articles = [];
+  
+  if (data.articles && Array.isArray(data.articles)) {
+    articles = data.articles;
+  } else if (data.data && Array.isArray(data.data)) {
+    articles = data.data;
+  }
+
+  // Filter out articles without title or image
+  const filtered = articles.filter(a =>
+    a.title &&
+    a.title !== '[Removed]' &&
+    (a.urlToImage || a.image)
+  );
+
+  if (filtered.length === 0) {
+    setError('No articles found. API may have returned empty results.');
+  } else {
+    setArticles(filtered);
+  }
+  setLoading(false);
+})
+.catch(err => {
+  setError('Failed to load news. ' + err.message);
+  setLoading(false);
+});
 }, [category]);
 
   const formatDate = (dateStr) => {
