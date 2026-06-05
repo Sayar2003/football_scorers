@@ -87,9 +87,10 @@ export default function News() {
 
     const query = categoryQueries[category] || `football ${category}`;
     
-    // Dynamically retrieve your backend deployment path from environment setup
-    const backendUrl = process.env.REACT_APP_BACKEND_URL;
-    const url = `${backendUrl}/api/news?category=${encodeURIComponent(query)}`;    
+const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    
+    // FIXED: Added the matching '/v4' endpoint segment so your Render server receives it properly!
+    const url = `${backendUrl}/v4/api/news?category=${encodeURIComponent(query)}`;    
     
     fetch(url)
       .then(res => {
