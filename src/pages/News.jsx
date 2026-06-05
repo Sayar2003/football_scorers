@@ -38,11 +38,11 @@ function ArticleCard({ article, featured, formatDate, glass }) {
         display: 'flex', 
         flexDirection: 'column'
       }}>
-        {article.urlToImage && (
-          <img src={article.urlToImage} alt={article.title || "News"}
-            style={{ width: '100%', height: featured ? '300px' : '160px', objectFit: 'cover' }}
-            onError={(e) => { e.target.style.display = 'none'; }} />
-        )}
+        {article.image && (
+  <img src={article.image} alt={article.title}
+    style={{ width: '100%', height: featured ? '300px' : '160px', objectFit: 'cover' }}
+    onError={(e) => { e.target.style.display = 'none'; }} />
+)}
         <div style={{ padding: featured ? '1.5rem' : '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
             {featured && (
@@ -80,48 +80,37 @@ export default function News() {
   const { isDark } = useTheme();
   const glass = getGlass(isDark);
 
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true); 
-    setError(null);
+useEffect(() => {
+  setLoading(true);
+  setError(null);
 
-    const query = categoryQueries[category] || `football ${category}`;
-    
-const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-    
-    // FIXED: Added the matching '/v4' endpoint segment so your Render server receives it properly!
-    const url = `${backendUrl}/v4/api/news?category=${encodeURIComponent(query)}`;    
-    
-    fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error(`Backend error response status code: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        if (!isMounted) return;
-        if (data.status === 'error') throw new Error(data.message);
-        
-        // Ensure a fall-through empty array layout check
-        const validArticles = (data.articles || []).filter(a => a && a.title && a.title !== '[Removed]');
-        
-        // Maps properties cleanly so your image and source nodes work out of the box
-        const mappedArticles = validArticles.map(a => ({
-          ...a,
-          urlToImage: a.urlToImage || a.image, 
-          source: { name: a.source?.name || 'News' }
-        }));
+  const categoryQueries = {
+    'all': 'football transfer news',
+    'transfer': 'football transfer signing rumour',
+    'premier league': 'Premier League football',
+    'la liga': 'La Liga football Spain',
+    'bundesliga': 'Bundesliga football Germany',
+    'serie a': 'Serie A football Italy',
+    'ligue 1': 'Ligue 1 football France',
+  };
 
-        setArticles(mappedArticles);
-        setLoading(false);
-      })
-      .catch(err => { 
-        if (!isMounted) return;
-        setError('Failed to load news. ' + err.message); 
-        setLoading(false); 
-      });
+  const query = categoryQueries[category] || `football ${category}`;
 
-    return () => { isMounted = false; };
-  }, [category]);
+  // NewsAPI direct call — does not go through backend
+  const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=20&token=${process.env.REACT_APP_GNEWS_API_KEY}`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+  if (!data.articles) throw new Error('No articles found');
+  setArticles(data.articles.filter(a => a.title && a.image));
+  setLoading(false);
+})
+    .catch(err => {
+      setError('Failed to load news. ' + err.message);
+      setLoading(false);
+    });
+}, [category]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
