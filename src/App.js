@@ -21,6 +21,7 @@ import YoungTalent from './pages/YoungTalent';
 import ContentCreator from './pages/ContentCreator';
 import Chatbot from './pages/Chatbot';
 import Favorites from './pages/Favorites';
+import PlayerComparator from './pages/tools/PlayerComparator';
 import './index.css';
 
 function AppLayout() {
@@ -52,6 +53,7 @@ function AppLayout() {
             <Route path="/chat" element={<Chatbot />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="*" element={<Navigate to="/" />} />
+            <Route path="/tools/comparator" element={<PlayerComparator />} />
           </Routes>
         </main>
       </div>

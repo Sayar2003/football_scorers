@@ -16,6 +16,10 @@ const NAV_LINKS = [
   { path: '/creator', label: 'Creator', icon: '🎨' },
 ];
 
+const TOOL_LINKS = [
+  { path: '/tools/comparator', label: 'Player Comparator', icon: '⚔️' },
+];
+
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -107,45 +111,64 @@ export default function Sidebar({ isOpen, onClose }) {
         )}
 
         {/* Nav links */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-          {NAV_LINKS.map(link => {
-            const isActive = location.pathname === link.path;
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={onClose}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '0.75rem 1rem', borderRadius: '10px',
-                  marginBottom: '4px', textDecoration: 'none',
-                  background: isActive
-                    ? 'rgba(59,130,246,0.15)'
-                    : 'transparent',
-                  border: isActive
-                    ? '1px solid rgba(59,130,246,0.3)'
-                    : '1px solid transparent',
-                  color: isActive
-                    ? '#60a5fa'
-                    : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-                  fontWeight: isActive ? '600' : '400',
-                  fontSize: '14px',
-                  transition: 'all 0.2s',
-                  boxShadow: isActive ? '0 0 12px rgba(59,130,246,0.15)' : 'none'
-                }}
-              >
-                <span style={{ fontSize: '18px' }}>{link.icon}</span>
-                {link.label}
-                {isActive && (
-                  <div style={{
-                    marginLeft: 'auto', width: '6px', height: '6px',
-                    borderRadius: '50%', backgroundColor: '#3b82f6'
-                  }} />
-                )}
-              </Link>
-            );
-          })}
-        </div>
+<div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+  {NAV_LINKS.map(link => {
+    const isActive = location.pathname === link.path;
+    return (
+      <Link key={link.path} to={link.path} onClick={onClose}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '0.75rem 1rem', borderRadius: '10px',
+          marginBottom: '4px', textDecoration: 'none',
+          background: isActive ? 'rgba(59,130,246,0.15)' : 'transparent',
+          border: isActive ? '1px solid rgba(59,130,246,0.3)' : '1px solid transparent',
+          color: isActive ? '#60a5fa' : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+          fontWeight: isActive ? '600' : '400', fontSize: '14px',
+          transition: 'all 0.2s',
+          boxShadow: isActive ? '0 0 12px rgba(59,130,246,0.15)' : 'none'
+        }}>
+        <span style={{ fontSize: '18px' }}>{link.icon}</span>
+        {link.label}
+        {isActive && <div style={{ marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#3b82f6' }} />}
+      </Link>
+    );
+  })}
+
+  {/* Tools section */}
+  <div style={{
+    marginTop: '1rem', marginBottom: '0.5rem',
+    padding: '0 0.5rem',
+    display: 'flex', alignItems: 'center', gap: '8px'
+  }}>
+    <div style={{ flex: 1, height: '1px', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+    <span style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
+      🔧 Tools
+    </span>
+    <div style={{ flex: 1, height: '1px', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+  </div>
+
+  {TOOL_LINKS.map(link => {
+    const isActive = location.pathname === link.path;
+    return (
+      <Link key={link.path} to={link.path} onClick={onClose}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '0.75rem 1rem', borderRadius: '10px',
+          marginBottom: '4px', textDecoration: 'none',
+          background: isActive ? 'rgba(139,92,246,0.15)' : 'transparent',
+          border: isActive ? '1px solid rgba(139,92,246,0.3)' : '1px solid transparent',
+          color: isActive ? '#a78bfa' : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+          fontWeight: isActive ? '600' : '400', fontSize: '14px',
+          transition: 'all 0.2s',
+          boxShadow: isActive ? '0 0 12px rgba(139,92,246,0.15)' : 'none'
+        }}>
+        <span style={{ fontSize: '18px' }}>{link.icon}</span>
+        {link.label}
+        {isActive && <div style={{ marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#a78bfa' }} />}
+      </Link>
+    );
+  })}
+</div>
 
         {/* Footer */}
         <div style={{
