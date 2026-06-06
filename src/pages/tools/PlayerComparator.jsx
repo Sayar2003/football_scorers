@@ -79,21 +79,19 @@ export default function PlayerComparator() {
   
   const cachedTeams = useRef(null);
 
-  const getAllPlayers = async () => {
-    if (cachedTeams.current) return cachedTeams.current;
-    try {
-      const responses = await Promise.all(
-        LEAGUE_CODES.map(code => api.get(`/competitions/${code}/scorers?limit=50`))
-      );
-      const allPlayers = responses.flatMap(res => res.data.scorers || []);
-      const unique = Array.from(new Map(allPlayers.map(p => [p.player.id, p])).values());
-      cachedTeams.current = unique;
-      return unique;
-    } catch (err) {
-      console.error("Error warming data tier caches:", err);
-      return [];
-    }
-  };
+ const getAllPlayers = async () => {
+  if (cachedTeams.current) return cachedTeams.current;
+  try {
+    // Hit your proxy's consolidated endpoint instead of looping 5 separate external requests
+    const res = await api.get('/top-scorers');
+    const allPlayers = res.data || [];
+    cachedTeams.current = allPlayers;
+    return allPlayers;
+  } catch (err) {
+    console.error("Error gathering data from local cache proxy:", err);
+    return [];
+  }
+};
 
   // --- FIXED: Debounce Engine hooks for responsive search handling ---
   useEffect(() => {

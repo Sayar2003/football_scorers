@@ -8,12 +8,85 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- CACHE LAYER MEMORY ENGINE ---
+let globalScorersCache = null;
+let cacheExpirationTime = null;
+const CACHE_DURATION = 60 * 60 * 1000; // 1 Hour Cache Lifetime Boundary
+const LEAGUE_CODES = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'FootballApp API running and healthy' });
 });
 
-// Football data proxy
+// --- NEW ENDPOINT: Consolidated Top Scorers Cache Service ---
+app.get('/api/top-scorers', async (req, res) => {
+  const currentTime = Date.now();
+  const apiKey = process.env.REACT_APP_FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Football API Key missing' });
+  }
+
+  // 1. If valid data exists in local server memory, return it instantly
+  if (globalScorersCache && cacheExpirationTime && currentTime < cacheExpirationTime) {
+    console.log("⚡ Serving aggregated player list instantly from server memory cache...");
+    return res.json(globalScorersCache);
+  }
+
+  console.log("🌐 Cache empty or expired. Synchronizing with football data API tiers...");
+  try {
+    const aggregatedScorers = [];
+
+    // 2. Fetch data sequentially from the leagues with built-in pauses to completely bypass 429 ceilings
+    for (const code of LEAGUE_CODES) {
+      console.log(`Fetching scorer metrics for competition pool: ${code}`);
+      const targetUrl = `https://api.football-data.org/v4/competitions/${code}/scorers?limit=50`;
+      
+      const response = await fetch(targetUrl, {
+        method: 'GET',
+        headers: {
+          'X-Auth-Token': apiKey,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === 429) {
+        console.warn(`⚠️ Rate limit boundary tripped during fetch for league ${code}. Using existing memory frames if available.`);
+        if (globalScorersCache) return res.json(globalScorersCache);
+        return res.status(429).json({ error: "External data tier rate limits reached. Please try again shortly." });
+      }
+
+      const data = await response.json();
+      if (data.scorers && Array.isArray(data.scorers)) {
+        aggregatedScorers.push(...data.scorers);
+      }
+
+      // Crucial: 250ms spacing pause between network targets ensures compliance with free tier accounts
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+
+    // 3. Deduplicate elements by Player ID to keep arrays clean
+    const uniqueScorers = Array.from(new Map(aggregatedScorers.map(s => [s.player.id, s])).values());
+
+    // 4. Update memory cache parameters
+    globalScorersCache = uniqueScorers;
+    cacheExpirationTime = currentTime + CACHE_DURATION;
+
+    console.log(`✅ Successfully updated local caching tier. Registered ${uniqueScorers.length} players.`);
+    res.json(uniqueScorers);
+
+  } catch (err) {
+    console.error('Data Tier Gathering Failure:', err.message);
+    if (globalScorersCache) {
+      console.log("♻️ Returning stale cache pool instead of throwing error stack to client.");
+      return res.json(globalScorersCache);
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Football data proxy (Fallback endpoint for individual player data fetches)
 app.use('/v4', async (req, res) => {
   try {
     const apiKey = process.env.REACT_APP_FOOTBALL_API_KEY || process.env.FOOTBALL_API_KEY;
